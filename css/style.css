@@ -1,4 +1,3 @@
-/* 重置和基础样式 */
 * {
     margin: 0;
     padding: 0;
@@ -17,7 +16,7 @@ body {
     height: 100%;
 }
 
-/* 游戏容器和画布 */
+/* 游戏容器基础样式 */
 #gameContainer {
     position: relative;
     width: 100%;
@@ -31,13 +30,13 @@ body {
     height: 100%;
 }
 
-/* 游戏信息显示 */
+/* 游戏信息区样式（分数、生命、等级） */
 #gameInfo {
     position: absolute;
     top: 10px;
     left: 10px;
     font-size: 16px;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
     padding: 8px 12px;
     border-radius: 8px;
     display: flex;
@@ -45,13 +44,13 @@ body {
     z-index: 10;
 }
 
-/* BOSS相关样式 */
+/* BOSS相关UI样式 */
 #bossTimer {
     position: absolute;
     top: 10px;
     right: 10px;
     font-size: 16px;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
     padding: 8px 12px;
     border-radius: 8px;
     z-index: 10;
@@ -69,13 +68,18 @@ body {
     overflow: hidden;
     display: none;
     z-index: 10;
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
 }
 
 #bossHealthFill {
     height: 100%;
     width: 100%;
-    background-color: #e74c3c;
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
     transition: width 0.3s;
+}
+
+#bossHealthFill.low {
+    animation: blink 1s infinite alternate;
 }
 
 #bossName {
@@ -85,7 +89,7 @@ body {
     transform: translateX(-50%);
     font-size: 18px;
     color: #f1c40f;
-    text-shadow: 0 0 5px #000;
+    text-shadow: 0 0 8px #ff0;
     display: none;
     z-index: 10;
 }
@@ -95,21 +99,15 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 24px;
+    font-size: 28px;
     color: #e74c3c;
-    text-shadow: 0 0 10px #000;
+    text-shadow: 0 0 15px #f00;
     animation: pulse 1s infinite;
     display: none;
     z-index: 15;
 }
 
-@keyframes pulse {
-    0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-}
-
-/* 控制区域 */
+/* 操作控制区样式（摇杆、射击、技能按钮） */
 #controls {
     position: absolute;
     bottom: 20px;
@@ -122,7 +120,6 @@ body {
     z-index: 10;
 }
 
-/* 摇杆控制 */
 #joystickArea {
     position: relative;
     width: 120px;
@@ -135,7 +132,7 @@ body {
     height: 80px;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.4);
     top: 20px;
     left: 20px;
 }
@@ -145,13 +142,13 @@ body {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: rgba(52, 152, 219, 0.8);
+    background-color: rgba(52, 152, 219, 0.9);
     top: 40px;
     left: 40px;
-    transition: transform 0.1s;
+    transition: transform 0.05s;
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.8);
 }
 
-/* 射击按钮 */
 #fireArea {
     position: relative;
     width: 120px;
@@ -162,8 +159,8 @@ body {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background-color: rgba(231, 76, 60, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(231, 76, 60, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.4);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -172,15 +169,59 @@ body {
     position: absolute;
     top: 20px;
     right: 20px;
+    transition: all 0.1s;
 }
 
 #fireButton:active {
-    background-color: rgba(231, 76, 60, 0.6);
+    background-color: rgba(231, 76, 60, 0.8);
     transform: scale(0.95);
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
 }
 
-/* 开始屏幕 */
-#startScreen {
+#skillButton {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(155, 89, 182, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+/* 状态提示区样式（生命恢复、攻击速度、技能冷却） */
+#statusInfo {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+}
+
+#lifeRegenTimer,
+#attackSpeedInfo,
+#skillCooldown {
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: none;
+}
+
+#skillCooldown {
+    color: #e74c3c;
+}
+
+/* 页面类UI样式（开始、设置、游戏结束） */
+#startScreen,
+#gameOverScreen,
+#settingsScreen {
     position: absolute;
     top: 0;
     left: 0;
@@ -190,12 +231,171 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.9);
     z-index: 20;
     text-align: center;
     padding: 20px;
+    animation: fadeIn 0.5s;
 }
 
+/* 设置界面选项样式 */
+.setting-option {
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* 弹窗类样式（等级提升、成就、技能选择、道具、生命恢复） */
+.level-up,
+.achievementPopup,
+.skillSelectPopup,
+.itemPopup,
+.lifeRegenPopup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: 0 0 10px #000;
+    animation: levelUp 1.5s forwards;
+    display: none;
+    z-index: 15;
+    text-align: center;
+}
+
+.achievementPopup {
+    color: #f1c40f;
+    font-size: 20px;
+    width: 80%;
+    max-width: 300px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #f1c40f;
+}
+
+.skillSelectPopup {
+    color: white;
+    font-size: 18px;
+    width: 90%;
+    max-width: 320px;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #3498db;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.skillOption {
+    padding: 12px;
+    background: rgba(52, 152, 219, 0.2);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-align: left;
+}
+
+.skillOption:hover {
+    background: rgba(52, 152, 219, 0.4);
+}
+
+.skillDesc {
+    font-size: 14px;
+    color: #bdc3c7;
+    margin-top: 5px;
+}
+
+.itemPopup {
+    color: #e74c3c;
+    font-size: 20px;
+}
+
+.lifeRegenPopup {
+    color: #2ecc71;
+    font-size: 22px;
+}
+
+/* 粒子效果与特效样式 */
+.enemy-death-particle,
+.player/*it-particle,
+.boss-explosion-particle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 1;
+    animation: particleFade 1s forwards;
+}
+
+.boss-explosion-particle {
+    width: 8px;
+    height: 8px;
+    animation: bossParticleFade 1.5s forwards;
+}
+
+.boss-shockwave {
+    position: absolute;
+    border: 2px solid #e74c3c;
+    border-radius: 50%;
+    opacity: 1;
+    animation: shockwave 1s forwards;
+}
+
+.damage-number {
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    text-shadow: 0 0 3px #000;
+    animation: damageFloat 1s forwards;
+}
+
+/* 通用按钮样式 */
 button {
     padding: 15px 30px;
     font-size: 18px;
@@ -204,17 +404,29 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 20px;
+    margin-top: 15px;
+    transition: background 0.3s;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
 }
 
 button:hover {
     background-color: #45a049;
 }
 
+button.secondary {
+    background-color: #3498db;
+}
+
+button.secondary:hover {
+    background-color: #2980b9;
+}
+
+/* 文本基础样式 */
 h1 {
     font-size: 28px;
     margin-bottom: 15px;
     color: #3498db;
+    text-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
 }
 
 p {
@@ -222,208 +434,116 @@ p {
     margin-bottom: 10px;
 }
 
-/* 游戏结束屏幕 */
-#gameOverScreen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items:  center;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 20;
-}
-
 .instructions {
     margin-bottom: 20px;
+    max-width: 350px;
 }
 
 .instruction-item {
     margin: 8px 0;
     color: #bdc3c7;
+    text-align: left;
 }
 
-/* 升级效果 */
-.level-up {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 24px;
-    color: #2ecc71;
-    text-shadow: 0 0 10px #000;
-    animation: levelUp 1.5s forwards;
-    display: none;
-    z-index: 15;
+/* 动画关键帧定义 */
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.3);
+    }
+
+    100% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes blink {
+    from {
+        opacity: 0.6;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes levelUp {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5);
+    }
 }
 
-/* 血条样式 */
-.health-bar {
-    position: absolute;
-    top: -10px;
-    left: 0;
-    width: 100%;
-    height: 5px;
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-    overflow: hidden;
+@keyframes particleFade {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
 }
 
-.health-fill {
-    height: 100%;
-    width: 100%;
-    background-color: #2ecc71;
+@keyframes bossParticleFade {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(2) translateY(30px);
+    }
 }
 
-.health-text {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-    color: white;
-    text-shadow: 0 0 3px #000;
+@keyframes shockwave {
+    0% {
+        opacity: 1;
+        width: 0;
+        height: 0;
+    }
+
+    100% {
+        opacity: 0;
+        width: 300px;
+        height: 300px;
+    }
 }
 
-/* 生命恢复计时器 */
-#lifeRegenTimer {
-    position: absolute;
-    bottom: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 10px;
-    border-radius: 5px;
-    z-index: 10;
-    display: none;
-}
+@keyframes damageFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 
-/* 攻击速度信息 */
-#attackSpeedInfo {
-    position: absolute;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 10px;
-    border-radius: 5px;
-    z-index: 10;
-    display: none;
-}
-
-/* 攻击力信息 */
-#attackPowerInfo {
-    position: absolute;
-    bottom: 130px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 10px;
-    border-radius: 5px;
-    z-index: 10;
-    display: none;
-}
-
-/* 攻击力提升效果 */
-.power-up {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 24px;
-    color: #e67e22;
-    text-shadow: 0 0 10px #000;
-    animation: powerUp 1.5s forwards;
-    display: none;
-    z-index: 15;
-}
-
-@keyframes powerUp {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
-}
-
-/* 道具样式 */
-.powerup {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    animation: float 2s infinite ease-in-out;
-    z-index: 5;
-}
-
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
-}
-
-.powerup-health {
-    background-color: #e74c3c;
-    border: 2px solid #c0392b;
-}
-
-.powerup-beam {
-    background-color: #3498db;
-    border: 2px solid #2980b9;
-}
-
-.powerup-effect {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 24px;
-    text-shadow: 0 0 10px #000;
-    animation: powerUpEffect 1.5s forwards;
-    display: none;
-    z-index: 15;
-}
-
-@keyframes powerUpEffect {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
-}
-
-/* 最大生命值信息 */
-#maxHealthInfo {
-    position: absolute;
-    bottom: 160px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 10px;
-    border-radius: 5px;
-    z-index: 10;
-    display: none;
-}
-
-/* 弹道宽度信息 */
-#beamWidthInfo {
-    position: absolute;
-    bottom: 190px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 10px;
-    border-radius: 5px;
-    z-index: 10;
-    display: none;
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
 }
