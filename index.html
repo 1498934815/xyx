@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>太空射击 - 优化版</title>
+    <title>太空射击游戏</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="assets/images/icon.png">
     <meta name="theme-color" content="#000000">
 </head>
 <body>
@@ -74,10 +74,10 @@
         </div>
     </div>
 
-    <!-- 预加载音效 -->
-    <audio id="shootSound" preload="auto" src="assets/sounds/shoot.wav"></audio>
-    <audio id="explosionSound" preload="auto" src="assets/sounds/explosion.wav"></audio>
-    <audio id="gameOverSound" preload="auto" src="assets/sounds/gameover.wav"></audio>
+    <!-- 音效文件使用相对路径 -->
+    <audio id="shootSound" preload="auto" src="assets/sounds/shoot.mp3"></audio>
+    <audio id="explosionSound" preload="auto" src="assets/sounds/explosion.mp3"></audio>
+    <audio id="gameOverSound" preload="auto" src="assets/sounds/gameover.mp3"></audio>
 
     <script src="game.js" defer></script>
 </body>
