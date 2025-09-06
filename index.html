@@ -1,14 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Card Throw Animation</title>
+    <title>手机太空射击</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="info">点击或触摸屏幕扔出纸牌!</div>
-    <canvas id="canvas"></canvas>
-    <script src="script.js" defer></script>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="gameInfo">
+            分数: <span id="score">0</span> | 生命: <span id="lives">3</span>
+        </div>
+        
+        <div id="controls">
+            <div class="control-btn" id="leftBtn">←</div>
+            <div id="fireBtn">射击</div>
+            <div class="control-btn" id="rightBtn">→</div>
+        </div>
+        
+        <div id="startScreen">
+            <h1>太空射击游戏</h1>
+            <p>使用左右按钮移动，点击中间射击按钮发射子弹</p>
+            <p>击中敌人获得分数，避免被敌人撞到</p>
+            <button id="startButton">开始游戏</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
 </body>
 </html>
