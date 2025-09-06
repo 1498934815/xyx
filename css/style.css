@@ -1,0 +1,429 @@
+/* 重置和基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    overflow: hidden;
+    background-color: #000;
+    color: white;
+    font-family: Arial, sans-serif;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+/* 游戏容器和画布 */
+#gameContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#gameCanvas {
+    display: block;
+    background-color: #000;
+    width: 100%;
+    height: 100%;
+}
+
+/* 游戏信息显示 */
+#gameInfo {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+}
+
+/* BOSS相关样式 */
+#bossTimer {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 12px;
+    border-radius: 8px;
+    z-index: 10;
+}
+
+#bossHealthBar {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+    z-index: 10;
+}
+
+#bossHealthFill {
+    height: 100%;
+    width: 100%;
+    background-color: #e74c3c;
+    transition: width 0.3s;
+}
+
+#bossName {
+    position: absolute;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px;
+    color: #f1c40f;
+    text-shadow: 0 0 5px #000;
+    display: none;
+    z-index: 10;
+}
+
+#bossWarning {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: #e74c3c;
+    text-shadow: 0 0 10px #000;
+    animation: pulse 1s infinite;
+    display: none;
+    z-index: 15;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* 控制区域 */
+#controls {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 10;
+}
+
+/* 摇杆控制 */
+#joystickArea {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+#joystickBase {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    top: 20px;
+    left: 20px;
+}
+
+#joystickHandle {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(52, 152, 219, 0.8);
+    top: 40px;
+    left: 40px;
+    transition: transform 0.1s;
+}
+
+/* 射击按钮 */
+#fireArea {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+#fireButton {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(231, 76, 60, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 16px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+#fireButton:active {
+    background-color: rgba(231, 76, 60, 0.6);
+    transform: scale(0.95);
+}
+
+/* 开始屏幕 */
+#startScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 20;
+    text-align: center;
+    padding: 20px;
+}
+
+button {
+    padding: 15px 30px;
+    font-size: 18px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    color: #3498db;
+}
+
+p {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+/* 游戏结束屏幕 */
+#gameOverScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items:  center;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 20;
+}
+
+.instructions {
+    margin-bottom: 20px;
+}
+
+.instruction-item {
+    margin: 8px 0;
+    color: #bdc3c7;
+}
+
+/* 升级效果 */
+.level-up {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: #2ecc71;
+    text-shadow: 0 0 10px #000;
+    animation: levelUp 1.5s forwards;
+    display: none;
+    z-index: 15;
+}
+
+@keyframes levelUp {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+/* 血条样式 */
+.health-bar {
+    position: absolute;
+    top: -10px;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.health-fill {
+    height: 100%;
+    width: 100%;
+    background-color: #2ecc71;
+}
+
+.health-text {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: white;
+    text-shadow: 0 0 3px #000;
+}
+
+/* 生命恢复计时器 */
+#lifeRegenTimer {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 10;
+    display: none;
+}
+
+/* 攻击速度信息 */
+#attackSpeedInfo {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 10;
+    display: none;
+}
+
+/* 攻击力信息 */
+#attackPowerInfo {
+    position: absolute;
+    bottom: 130px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 10;
+    display: none;
+}
+
+/* 攻击力提升效果 */
+.power-up {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: #e67e22;
+    text-shadow: 0 0 10px #000;
+    animation: powerUp 1.5s forwards;
+    display: none;
+    z-index: 15;
+}
+
+@keyframes powerUp {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+/* 道具样式 */
+.powerup {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    animation: float 2s infinite ease-in-out;
+    z-index: 5;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.powerup-health {
+    background-color: #e74c3c;
+    border: 2px solid #c0392b;
+}
+
+.powerup-beam {
+    background-color: #3498db;
+    border: 2px solid #2980b9;
+}
+
+.powerup-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    text-shadow: 0 0 10px #000;
+    animation: powerUpEffect 1.5s forwards;
+    display: none;
+    z-index: 15;
+}
+
+@keyframes powerUpEffect {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+/* 最大生命值信息 */
+#maxHealthInfo {
+    position: absolute;
+    bottom: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 10;
+    display: none;
+}
+
+/* 弹道宽度信息 */
+#beamWidthInfo {
+    position: absolute;
+    bottom: 190px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 10;
+    display: none;
+}
