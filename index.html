@@ -1,32 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>手机太空射击</title>
+    <title>太空射击 - 优化版</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
-        <div id="gameInfo">
-            分数: <span id="score">0</span> | 生命: <span id="lives">3</span>
+        
+        <div id="gameUI">
+            <div id="gameInfo">
+                <span>分数: <span id="score">0</span></span>
+                <span>生命: <span id="lives">3</span></span>
+                <span>等级: <span id="level">1</span></span>
+            </div>
+            
+            <div id="controls">
+                <div class="control-btn" id="leftBtn">←</div>
+                <div id="fireBtn">射击</div>
+                <div class="control-btn" id="rightBtn">→</div>
+            </div>
         </div>
         
-        <div id="controls">
-            <div class="control-btn" id="leftBtn">←</div>
-            <div id="fireBtn">射击</div>
-            <div class="control-btn" id="rightBtn">→</div>
+        <div id="startScreen" class="screen">
+            <h1>太空射击</h1>
+            <div class="instructions">
+                <p>使用左右按钮移动飞船</p>
+                <p>点击射击按钮发射子弹</p>
+                <p>击中敌人获得分数，避免碰撞</p>
+            </div>
+            <div class="buttons">
+                <button id="startButton" class="btn-primary">开始游戏</button>
+                <button id="settingsButton" class="btn-secondary">设置</button>
+            </div>
         </div>
         
-        <div id="startScreen">
-            <h1>太空射击游戏</h1>
-            <p>使用左右按钮移动，点击中间射击按钮发射子弹</p>
-            <p>击中敌人获得分数，避免被敌人撞到</p>
-            <button id="startButton">开始游戏</button>
+        <div id="settingsScreen" class="screen hidden">
+            <h1>游戏设置</h1>
+            <div class="settings-options">
+                <label>
+                    <input type="checkbox" id="gyroControl" checked>
+                    启用陀螺仪控制
+                </label>
+                <label>
+                    <input type="checkbox" id="soundToggle" checked>
+                    启用音效
+                </label>
+                <label>
+                    控制灵敏度:
+                    <input type="range" id="sensitivity" min="1" max="10" value="5">
+                </label>
+            </div>
+            <div class="buttons">
+                <button id="saveSettings" class="btn-primary">保存</button>
+                <button id="cancelSettings" class="btn-secondary">取消</button>
+            </div>
+        </div>
+        
+        <div id="gameOverScreen" class="screen hidden">
+            <h1>游戏结束</h1>
+            <div class="score-display">
+                <p>最终得分: <span id="finalScore">0</span></p>
+                <p>最高记录: <span id="highScore">0</span></p>
+            </div>
+            <div class="buttons">
+                <button id="restartButton" class="btn-primary">再玩一次</button>
+                <button id="menuButton" class="btn-secondary">返回菜单</button>
+            </div>
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <!-- 预加载音效 -->
+    <audio id="shootSound" preload="auto" src="assets/sounds/shoot.wav"></audio>
+    <audio id="explosionSound" preload="auto" src="assets/sounds/explosion.wav"></audio>
+    <audio id="gameOverSound" preload="auto" src="assets/sounds/gameover.wav"></audio>
+
+    <script src="game.js" defer></script>
 </body>
 </html>
