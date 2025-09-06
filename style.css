@@ -1,43 +1,119 @@
-:root {
-    --bg-color: #008000;
-    --text-color: #ffffff;
-    --card-width: 71px;
-    --card-height: 96px;
-}
-
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-}
-
-html, body {
-    height: 100%;
-    overflow: hidden;
+    touch-action: manipulation;
 }
 
 body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Courier New', monospace;
-    touch-action: none;
-}
-
-#info {
-    position: absolute;
-    top: 20px;
-    width: 100%;
-    text-align: center;
-    font-size: 1.2rem;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-}
-
-#canvas {
-    position: absolute;
-    display: block;
+    overflow: hidden;
+    background-color: #000;
+    color: white;
+    font-family: Arial, sans-serif;
+    position: fixed;
     width: 100%;
     height: 100%;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
+}
+
+#gameContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#gameCanvas {
+    display: block;
+    background-color: #000;
+    width: 100%;
+    height: 100%;
+}
+
+#gameInfo {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 18px;
+    z-index: 10;
+}
+
+#startScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 20;
+    text-align: center;
+    padding: 20px;
+}
+
+#controls {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    padding: 0 20px;
+    z-index: 10;
+}
+
+.control-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 24px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#fireBtn {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background-color: rgba(255, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 18px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+button {
+    padding: 15px 30px;
+    font-size: 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 15px;
+}
+
+p {
+    font-size: 16px;
+    margin-bottom: 10px;
 }
