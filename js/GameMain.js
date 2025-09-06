@@ -254,3 +254,271 @@ const GameMain = {
 
     /**
      * 更新玩家子弹位置
+     */
+    updateBullets() {
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            const bullet = this.bullets[i];
+            if (!bullet.active) continue;
+
+            // 1. 更新子弹位置（向上移动）
+            bullet.y -= bullet.speed;
+
+            // 2. 超出屏幕顶部，回收子弹
+            if (bullet.y < -bullet.height) {
+                objectPool.returnBullet(bullet);
+                this.bullets.splice(i, 1);
+            }
+        }
+    },
+
+    /**
+     * 绘制玩家子弹（含光晕效果）
+     */
+    drawBullets() {
+        this.bullets.forEach(bullet => {
+            if (!bullet.active) return;
+
+            // 1. 绘制子弹光晕（渐变）
+            Utils.drawGradientCircle(
+                this.ctx,
+                bullet.x + bullet.width / 2,
+                bullet.y + bullet.height / 2,
+                bullet.width * 2,
+                bullet.color,
+                'transparent'
+            );
+
+            // 2. 绘制子弹主体
+            this.ctx.fillStyle = bullet.color;
+            this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        });
+    },
+
+    /**
+     * 更新粒子效果（下落+淡出）
+     */
+    updateParticles() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
+            if (!particle.active) continue;
+
+            // 1. 更新粒子位置（向下移动）
+            particle.y += particle.speedY;
+            // 2. 粒子淡出
+            particle.opacity -= 0.01;
+
+            // 3. 透明度为0，回收粒子
+            if (particle.opacity <= 0) {
+                objectPool.returnParticle(particle);
+                this.particles.splice(i, 1);
+            }
+        }
+    },
+
+    /**
+     * 绘制粒子效果
+     */
+    drawParticles() {
+        this.particles.forEach(particle => {
+            if (!particle.active) return;
+
+            // 绘制半透明圆形粒子
+            this.ctx.fillStyle = `${particle.color.replace(')', `, ${particle.opacity})`)}`;
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.width / 2, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+    },
+
+    // ------------------------------ 碰撞检测 ------------------------------
+    /**
+     * 检查所有碰撞（子弹-敌人、子弹-BOSS、玩家-敌人、玩家-BOSS子弹）
+     */
+    checkAllCollisions() {
+        // 1. 子弹与敌人/BOSS的碰撞（倒序遍历，避免删除元素错乱）
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            const bullet = this.bullets[i];
+            if (!bullet.active) continue;
+
+            let isHit = false;
+
+            // 优先检测BOSS碰撞
+            if (GameState.bossActive) {
+                isHit = bossManager.checkBulletCollision(bullet);
+            }
+
+            // 未击中BOSS，检测普通敌人碰撞
+            if (!isHit) {
+                const hitEnemy = enemyManager.checkBulletCollision(bullet);
+                if (hitEnemy && !bullet.penetrate) {
+                    // 非穿透子弹击中敌人后移除
+                    this.bullets.splice(i, 1);
+                }
+            } else {
+                // 击中BOSS，移除子弹
+                this.bullets.splice(i, 1);
+            }
+        }
+
+        // 2. 玩家与普通敌人的碰撞
+        enemyManager.checkPlayerCollision();
+
+        // 3. 玩家与BOSS子弹的碰撞
+        if (GameState.bossActive) {
+            bossManager.checkPlayerCollision();
+        }
+    },
+
+    // ------------------------------ 等级提升 ------------------------------
+    /**
+     * 检查等级提升（分数达到目标则升级）
+     */
+    checkLevelUp() {
+        if (GameState.score < GameState.nextLevelScore) return;
+
+        // 1. 等级提升
+        const prevLevel = GameState.level;
+        GameState.level++;
+
+        // 2. 计算下一级所需分数（不同等级段不同增幅）
+        const ratio = GameState.level <= 5 
+            ? GameConfig.level.levelUpRatio[1]
+            : GameState.level <= 10 
+                ? GameConfig.level.levelUpRatio[6]
+                : GameConfig.level.levelUpRatio[11];
+        GameState.nextLevelScore = Math.floor(GameState.nextLevelScore * ratio);
+
+        // 3. 提升射击速度（通知玩家模块）
+        document.dispatchEvent(new Event('levelUp'));
+
+        // 4. 显示等级提升弹窗
+        uiManager.showLevelUp();
+
+        // 5. 每2级显示技能选择（1级除外）
+        if (GameState.level % 2 === 0 && GameState.level > 1) {
+            this.showSkillSelect();
+        }
+
+        // 6. 更新UI
+        uiManager.updateGameInfo();
+    },
+
+    /**
+     * 显示技能选择弹窗（暂停游戏循环）
+     */
+    showSkillSelect() {
+        // 暂停游戏循环
+        cancelAnimationFrame(this.gameLoopId);
+        // 显示技能选择弹窗，传入选择回调
+        uiManager.showSkillSelect((skillId) => {
+            // 触发技能选择事件（通知玩家模块）
+            document.dispatchEvent(new CustomEvent('skillSelected', {
+                detail: { skillId: skillId }
+            }));
+        });
+    },
+
+    // ------------------------------ 游戏结束 ------------------------------
+    /**
+     * 游戏结束（玩家生命为0时调用）
+     */
+    gameOver() {
+        // 1. 标记游戏停止状态
+        GameState.running = false;
+
+        // 2. 清除所有计时器和循环
+        this.clearAllTimers();
+        cancelAnimationFrame(this.gameLoopId);
+        enemyManager.stopSpawning();
+        if (GameState.bossActive) {
+            bossManager.forceEndBossFight();
+        }
+        player.stopFiring();
+
+        // 3. 回收所有对象到对象池
+        this.recycleAllObjects();
+
+        // 4. 显示游戏结束页面
+        uiManager.showGameOverScreen();
+    },
+
+    /**
+     * 回收所有活跃对象（子弹、敌人、粒子等）
+     */
+    recycleAllObjects() {
+        // 回收玩家子弹
+        this.bullets.forEach(bullet => objectPool.returnBullet(bullet));
+        this.bullets = [];
+        // 回收敌人
+        enemyManager.clearEnemies();
+        // 回收BOSS子弹
+        bossManager.bossBullets.forEach(bullet => objectPool.returnBossBullet(bullet));
+        bossManager.bossBullets = [];
+        // 回收粒子
+        this.particles.forEach(particle => objectPool.returnParticle(particle));
+        this.particles = [];
+        // 清空对象池（可选，释放内存）
+        objectPool.clearAll();
+    },
+
+    // ------------------------------ 工具方法 ------------------------------
+    /**
+     * 添加粒子到游戏循环（外部模块调用，如敌人死亡）
+     * @param {Array} particles - 要添加的粒子数组
+     */
+    addParticles(particles) {
+        this.particles = [...this.particles, ...particles];
+    },
+
+    /**
+     * 添加子弹到游戏循环（玩家射击时调用）
+     * @param {Object} bullet - 要添加的子弹对象
+     */
+    addBullet(bullet) {
+        if (bullet) this.bullets.push(bullet);
+    },
+
+    /**
+     * 清除所有计时器
+     */
+    clearAllTimers() {
+        this.clearLifeRegenTimer();
+        if (enemyManager.spawnTimer) clearInterval(enemyManager.spawnTimer);
+        if (bossManager.attackTimer) clearInterval(bossManager.attackTimer);
+        if (bossManager.spawnTimer) clearTimeout(bossManager.spawnTimer);
+        if (GameState.consecutiveKillTimer) clearTimeout(GameState.consecutiveKillTimer);
+    },
+
+    /**
+     * 清除生命恢复计时器
+     */
+    clearLifeRegenTimer() {
+        if (this.lifeRegenTimer) {
+            clearInterval(this.lifeRegenTimer);
+            this.lifeRegenTimer = null;
+        }
+    }
+};
+
+// 监听玩家射击事件（玩家发射子弹后添加到游戏循环）
+document.addEventListener('playerFire', (e) => {
+    const bullet = e.detail.bullet;
+    if (bullet) GameMain.addBullet(bullet);
+});
+
+// 初始化玩家射击事件触发（修改Player模块的fireBullet方法，添加事件触发）
+const originalFireBullet = player.fireBullet;
+player.fireBullet = function() {
+    const bullet = originalFireBullet.call(this);
+    if (bullet) {
+        document.dispatchEvent(new CustomEvent('playerFire', {
+            detail: { bullet: bullet }
+        }));
+    }
+    return bullet;
+};
+
+// 页面加载完成后初始化游戏
+window.addEventListener('load', () => {
+    GameMain.init();
+});
