@@ -1,4 +1,16 @@
 // 游戏核心模块
+// 确保DOM完全加载后初始化
+window.addEventListener('load', () => {
+    console.log('DOM加载完成，开始初始化游戏');
+    window.game = new SpaceShooter();
+    
+    // 添加全局调试函数
+    window.debugGame = function() {
+        console.log('强制启动游戏循环');
+        game.gameLoop();
+    };
+});
+
 class SpaceShooter {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
