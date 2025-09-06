@@ -3,82 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>太空射击游戏</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="assets/images/icon.png">
-    <meta name="theme-color" content="#000000">
+    <title>太空射击游戏 - 道具升级版</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
+        <div id="gameInfo">
+            <span>分数: <span id="score">0</span></span>
+            <span>生命: <span id="lives">3</span></span>
+            <span>等级: <span id="level">1</span></span>
+            <span>升级: <span id="nextLevel">100</span></span>
+        </div>
         
-        <div id="gameUI">
-            <div id="gameInfo">
-                <span>分数: <span id="score">0</span></span>
-                <span>生命: <span id="lives">3</span></span>
-                <span>等级: <span id="level">1</span></span>
+        <div id="bossTimer">BOSS倒计时: <span id="bossTime">90</span>秒</div>
+        <div id="bossHealthBar">
+            <div id="bossHealthFill"></div>
+        </div>
+        <div id="bossName"></div>
+        <div id="bossWarning">BOSS来袭!</div>
+        <div id="levelUp" class="level-up">等级提升!</div>
+        <div id="powerUp" class="power-up">攻击力提升!</div>
+        <div id="healthUpEffect" class="powerup-effect" style="color: #e74c3c;">生命上限提升!</div>
+        <div id="beamUpEffect" class="powerup-effect" style="color: #3498db;">弹道宽度提升!</div>
+        <div id="lifeRegenTimer">生命恢复: <span id="regenTime">60</span>秒</div>
+        <div id="attackSpeedInfo">攻击速度: <span id="fireRate">200</span>ms</div>
+        <div id="attackPowerInfo">攻击力: <span id="attackPower">1</span>x</div>
+        <div id="maxHealthInfo">生命上限: <span id="maxLives">3</span></div>
+        <div id="beamWidthInfo">弹道宽度: <span id="beamWidth">1</span></div>
+        
+        <div id="controls">
+            <div id="joystickArea">
+                <div id="joystickBase"></div>
+                <div id="joystickHandle"></div>
             </div>
             
-            <div id="controls">
-                <div class="control-btn" id="leftBtn">←</div>
-                <div id="fireBtn">射击</div>
-                <div class="control-btn" id="rightBtn">→</div>
+            <div id="fireArea">
+                <div id="fireButton">射击</div>
             </div>
         </div>
         
-        <div id="startScreen" class="screen">
-            <h1>太空射击</h1>
+        <div id="startScreen">
+            <h1>太空射击游戏 - 道具升级版</h1>
             <div class="instructions">
-                <p>使用左右按钮移动飞船</p>
-                <p>点击射击按钮发射子弹</p>
-                <p>击中敌人获得分数，避免碰撞</p>
+                <p class="instruction-item">• 每次升级提升攻击速度</p>
+                <p class="instruction-item">• 初始射击间隔200ms，每级减少20ms</p>
+                <p class="instruction-item">• 最低射击间隔100ms</p>
+                <p class="instruction-item">• 达到最低间隔后，升级提升攻击力</p>
+                <p class="instruction-item">• 收集道具可永久提升属性</p>
+                <p class="instruction-item">• 生命上限道具: +1最大生命</p>
+                <p class="instruction-item">• 弹道宽度道具: +1同时发射子弹</p>
+                <p class="instruction-item">• 敌人和BOSS随等级变强</p>
             </div>
-            <div class="buttons">
-                <button id="startButton" class="btn-primary">开始游戏</button>
-                <button id="settingsButton" class="btn-secondary">设置</button>
-            </div>
+            <button id="startButton">开始游戏</button>
         </div>
         
-        <div id="settingsScreen" class="screen hidden">
-            <h1>游戏设置</h1>
-            <div class="settings-options">
-                <label>
-                    <input type="checkbox" id="gyroControl" checked>
-                    启用陀螺仪控制
-                </label>
-                <label>
-                    <input type="checkbox" id="soundToggle" checked>
-                    启用音效
-                </label>
-                <label>
-                    控制灵敏度:
-                    <input type="range" id="sensitivity" min="1" max="10" value="5">
-                </label>
-            </div>
-            <div class="buttons">
-                <button id="saveSettings" class="btn-primary">保存</button>
-                <button id="cancelSettings" class="btn-secondary">取消</button>
-            </div>
-        </div>
-        
-        <div id="gameOverScreen" class="screen hidden">
+        <div id="gameOverScreen">
             <h1>游戏结束</h1>
-            <div class="score-display">
-                <p>最终得分: <span id="finalScore">0</span></p>
-                <p>最高记录: <span id="highScore">0</span></p>
-            </div>
-            <div class="buttons">
-                <button id="restartButton" class="btn-primary">再玩一次</button>
-                <button id="menuButton" class="btn-secondary">返回菜单</button>
-            </div>
+            <p>你的最终得分: <span id="finalScore">0</span></p>
+            <button id="restartButton">再玩一次</button>
         </div>
     </div>
 
-    <!-- 音效文件使用相对路径 -->
-    <audio id="shootSound" preload="auto" src="assets/sounds/shoot.mp3"></audio>
-    <audio id="explosionSound" preload="auto" src="assets/sounds/explosion.mp3"></audio>
-    <audio id="gameOverSound" preload="auto" src="assets/sounds/gameover.mp3"></audio>
-
-    <script src="game.js" defer></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
