@@ -1,18 +1,31 @@
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #e74c3c;
+    --accent-color: #f1c40f;
+    --text-color: #ffffff;
+    --bg-color: #000000;
+    --ui-bg-color: rgba(0, 0, 0, 0.7);
+    --btn-primary: #2ecc71;
+    --btn-secondary: #7f8c8d;
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
     overflow: hidden;
-    background-color: #000;
-    color: white;
-    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Arial', sans-serif;
     position: fixed;
     width: 100%;
     height: 100%;
+    user-select: none;
 }
 
 #gameContainer {
@@ -23,20 +36,85 @@ body {
 
 #gameCanvas {
     display: block;
-    background-color: #000;
+    background-color: var(--bg-color);
     width: 100%;
     height: 100%;
+}
+
+#gameUI {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
 }
 
 #gameInfo {
     position: absolute;
     top: 10px;
     left: 10px;
-    font-size: 18px;
-    z-index: 10;
+    font-size: 16px;
+    background-color: var(--ui-bg-color);
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: flex;
+    gap: 15px;
 }
 
-#startScreen {
+#controls {
+    position: absolute;
+    bottom: 25px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    padding: 0 20px;
+    pointer-events: auto;
+}
+
+.control-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-color);
+    font-size: 24px;
+    user-select: none;
+    transition: transform 0.1s, background-color 0.1s;
+    touch-action: manipulation;
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+#fireBtn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(231, 76, 60, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-color);
+    font-size: 16px;
+    transition: transform 0.1s, background-color 0.1s;
+}
+
+#fireBtn:active {
+    transform: scale(0.95);
+    background-color: rgba(231, 76, 60, 0.5);
+}
+
+.screen {
     position: absolute;
     top: 0;
     left: 0;
@@ -46,74 +124,101 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--ui-bg-color);
     z-index: 20;
     text-align: center;
     padding: 20px;
 }
 
-#controls {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
+.screen.hidden {
+    display: none;
+}
+
+.screen h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent-color);
+    text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+}
+
+.instructions p, .score-display p {
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+    line-height: 1.5;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 2rem;
     width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 40px;
-    padding: 0 20px;
-    z-index: 10;
+    max-width: 300px;
 }
 
-.control-btn {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 24px;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-#fireBtn {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    background-color: rgba(255, 0, 0, 0.3);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 18px;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-button {
-    padding: 15px 30px;
-    font-size: 20px;
-    background-color: #4CAF50;
-    color: white;
+.btn-primary, .btn-secondary {
+    padding: 12px 24px;
+    font-size: 1.1rem;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 20px;
+    transition: transform 0.1s, background-color 0.2s;
+    width: 100%;
 }
 
-button:hover {
-    background-color: #45a049;
+.btn-primary {
+    background-color: var(--btn-primary);
+    color: white;
 }
 
-h1 {
-    font-size: 28px;
-    margin-bottom: 15px;
+.btn-secondary {
+    background-color: var(--btn-secondary);
+    color: white;
 }
 
-p {
-    font-size: 16px;
-    margin-bottom: 10px;
+.btn-primary:active, .btn-secondary:active {
+    transform: scale(0.95);
+}
+
+.settings-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 300px;
+    margin: 1.5rem 0;
+    text-align: left;
+}
+
+.settings-options label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+}
+
+input[type="range"] {
+    width: 100%;
+    margin-top: 5px;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    #controls {
+        gap: 20px;
+    }
+    
+    .control-btn {
+        width: 60px;
+        height: 60px;
+    }
+    
+    #fireBtn {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .screen h1 {
+        font-size: 2rem;
+    }
 }
