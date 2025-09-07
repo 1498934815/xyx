@@ -375,3 +375,387 @@ class EnemyManager {
      */
     _detectCollisions() {
         const { activeEnemies, enemyBullets } = this.enemyState;
+        const player = this.gameState.getFullState().player;
+        const playerBullets = this.gameState.getFullState().battle.playerBullets;
+
+        // 1. 检测玩家子弹与敌人的碰撞
+        for (let i = playerBullets.length - 1; i >= 0; i--) {
+            const pBullet = playerBullets[i];
+            if (!pBullet || pBullet.isDestroyed) continue;
+
+            for (let j = activeEnemies.length - 1; j >= 0; j--) {
+                const enemy = activeEnemies[j];
+                if (!enemy || enemy.isDead) continue;
+
+                // 调用碰撞系统检测矩形碰撞
+                const isCollided = this.collisionSystem.checkRectCollision(
+                    { x: pBullet.x, y: pBullet.y, width: pBullet.width, height: pBullet.height },
+                    { x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height }
+                );
+
+                if (isCollided) {
+                    // 1.1 敌人受击：扣除血量，检测是否死亡
+                    enemy.health = Math.max(0, enemy.health - pBullet.damage);
+                    if (enemy.health <= 0 && !enemy.isDead) {
+                        this._handleEnemyDeath(enemy, j); // 处理敌人死亡
+                    }
+
+                    // 1.2 玩家子弹销毁（回收至对象池）
+                    this.objectPool.recycleObject('playerBullet', pBullet);
+                    playerBullets.splice(i, 1);
+                    break; // 一颗子弹只命中一个敌人
+                }
+            }
+        }
+
+        // 2. 检测敌人子弹与玩家的碰撞（玩家未无敌时生效）
+        if (!player.isInvincible && player.health > 0) {
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const eBullet = enemyBullets[i];
+                if (!eBullet) continue;
+
+                const isCollided = this.collisionSystem.checkRectCollision(
+                    { x: eBullet.x, y: eBullet.y, width: eBullet.width, height: eBullet.height },
+                    { x: player.x, y: player.y, width: player.width, height: player.height }
+                );
+
+                if (isCollided) {
+                    // 2.1 玩家受击：发布受击事件（扣除血量由PlayerSystem处理）
+                    this.eventBus.emit(window.GameEvents.PLAYER_HIT, { damage: eBullet.damage });
+
+                    // 2.2 敌人子弹销毁（回收至对象池）
+                    this.objectPool.recycleObject('enemyBullet', eBullet);
+                    enemyBullets.splice(i, 1);
+                }
+            }
+        }
+
+        // 3. 检测敌人与玩家的碰撞（玩家未无敌时生效）
+        if (!player.isInvincible && player.health > 0) {
+            for (let i = activeEnemies.length - 1; i >= 0; i--) {
+                const enemy = activeEnemies[i];
+                if (!enemy || enemy.isDead) continue;
+
+                const isCollided = this.collisionSystem.checkRectCollision(
+                    { x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height },
+                    { x: player.x, y: player.y, width: player.width, height: player.height }
+                );
+
+                if (isCollided) {
+                    // 3.1 玩家受击（碰撞伤害=敌人血量的10%，最低1点）
+                    const collisionDamage = Math.max(1, Math.floor(enemy.maxHealth * 0.1));
+                    this.eventBus.emit(window.GameEvents.PLAYER_HIT, { damage: collisionDamage });
+
+                    // 3.2 敌人碰撞后死亡（避免重复碰撞）
+                    if (!enemy.isDead) {
+                        this._handleEnemyDeath(enemy, i);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 处理敌人死亡：触发死亡动画、发放奖励、回收实例
+     * @param {Object} enemy - 死亡的敌人实例
+     * @param {number} index - 敌人在活跃列表中的索引
+     */
+    _handleEnemyDeath(enemy, index) {
+        const now = Date.now();
+        const enemyType = this.enemyConfig.enemyTypes.find(type => type.id === enemy.typeId);
+        if (!enemyType) return;
+
+        // 1. 标记敌人死亡，启动死亡动画
+        enemy.die(enemyType.visual.deathEffectDuration);
+
+        // 2. 发放敌人死亡奖励（分数为主，概率掉落道具）
+        this._grantEnemyReward(enemyType.reward);
+
+        // 3. 发布敌人死亡事件（供成就系统更新进度）
+        this.eventBus.emit(window.GameEvents.ENEMY_DEATH, {
+            enemyId: enemy.id,
+            enemyType: enemy.typeId,
+            enemyMaxHealth: enemy.maxHealth
+        });
+
+        // 4. 死亡动画结束后回收敌人实例
+        setTimeout(() => {
+            if (this.enemyState.activeEnemies[index] === enemy) {
+                this.objectPool.recycleObject(enemy.typeId, enemy);
+                this.enemyState.activeEnemies.splice(index, 1);
+            }
+        }, enemyType.visual.deathEffectDuration);
+    }
+
+    /**
+     * 发放敌人死亡奖励：基础分数奖励+概率道具奖励
+     * @param {Object} rewardConfig - 敌人奖励配置（type：类型，value：基础值）
+     */
+    _grantEnemyReward(rewardConfig) {
+        const playerState = this.gameState.getFullState().player;
+        switch (rewardConfig.type) {
+            case 'score':
+                // 1. 分数奖励：基础值+玩家等级加成（等级越高奖励越多）
+                const levelBonus = 1 + (playerState.level - 1) * 0.1; // 每级+10%奖励
+                const finalScore = Math.floor(rewardConfig.value * levelBonus);
+                this.gameState.updatePlayerState('score', playerState.score + finalScore);
+                this.eventBus.emit(window.GameEvents.UI_SETTING_CHANGE, {
+                    type: 'enemyReward',
+                    message: `+${finalScore}分`
+                });
+                break;
+
+            case 'item':
+                // 2. 道具奖励：按概率生成（如10%概率掉落生命包）
+                const itemDropRate = rewardConfig.dropRate || 0.1; // 默认10%掉落率
+                if (Math.random() <= itemDropRate) {
+                    this.eventBus.emit(window.GameEvents.ITEM_SPAWN, {
+                        itemType: rewardConfig.itemKey,
+                        x: Math.random() * 300 + 100, // 随机X坐标（100~400）
+                        y: Math.random() * 200 + 100  // 随机Y坐标（100~300）
+                    });
+                }
+                break;
+        }
+    }
+
+    /**
+     * 清理所有活跃敌人（回收至对象池）
+     */
+    _clearAllEnemies() {
+        this.enemyState.activeEnemies.forEach(enemy => {
+            this.objectPool.recycleObject(enemy.typeId, enemy);
+        });
+        this.enemyState.activeEnemies = [];
+        this.enemyState.spawnedThisWave = 0;
+    }
+
+    /**
+     * 清理所有敌人子弹（回收至对象池）
+     */
+    _clearAllBullets() {
+        this.enemyState.enemyBullets.forEach(bullet => {
+            this.objectPool.recycleObject('enemyBullet', bullet);
+        });
+        this.enemyState.enemyBullets = [];
+    }
+
+    /**
+     * 重置波次状态（游戏重置时调用）
+     */
+    _resetWaveState() {
+        const now = Date.now();
+        this.enemyState.currentWave = 1;
+        this.enemyState.nextSpawnTime = now + this.enemyConfig.spawn.initialSpawnDelay;
+        this.enemyState.nextWaveTime = now + this.enemyConfig.spawn.waveInterval;
+        this.enemyState.spawnedThisWave = 0;
+    }
+
+    /**
+     * 检测波次切换：本波次敌人全灭+达到波次间隔，切换到下一波
+     */
+    _checkWaveSwitch() {
+        const now = Date.now();
+        const { spawn } = this.enemyConfig;
+        const { activeEnemies, currentWave, nextWaveTime, spawnedThisWave } = this.enemyState;
+        const maxEnemyThisWave = spawn.enemyPerWave + Math.floor(currentWave * 0.5);
+
+        // 波次切换条件：本波次敌人已生成完毕+当前无活跃敌人+达到波次间隔
+        const canSwitchWave = spawnedThisWave >= maxEnemyThisWave && 
+                             activeEnemies.length === 0 && 
+                             now >= nextWaveTime;
+
+        if (canSwitchWave) {
+            // 1. 更新波次状态
+            this.enemyState.currentWave += 1;
+            this.enemyState.nextWaveTime = now + spawn.waveInterval;
+            this.enemyState.spawnedThisWave = 0;
+            this.enemyState.nextSpawnTime = now + 1000; // 1秒后开始生成下一波敌人
+
+            // 2. 发布波次切换事件（供UI显示“第X波！”提示）
+            this.eventBus.emit(window.GameEvents.ENEMY_WAVE_SWITCH, {
+                waveNumber: this.enemyState.currentWave,
+                enemyCount: spawn.enemyPerWave + Math.floor(this.enemyState.currentWave * 0.5)
+            });
+
+            // 3. 随波次提升敌人强度（每3波提升一次移动速度/血量）
+            if (this.enemyState.currentWave % 3 === 0) {
+                this.enemyConfig.enemyTypes.forEach(type => {
+                    type.baseAttr.moveSpeed *= 1.1; // 移动速度+10%
+                    type.baseAttr.health *= 1.2;    // 血量+20%
+                });
+                this.eventBus.emit(window.GameEvents.UI_SETTING_CHANGE, {
+                    type: 'waveWarning',
+                    message: `敌人强度提升！第${this.enemyState.currentWave}波更具挑战性！`
+                });
+            }
+        }
+    }
+
+    /**
+     * 主循环更新：敌人生成、移动、攻击，子弹移动，波次检测
+     * @param {number} deltaTime - 时间差（秒）
+     */
+    update(deltaTime) {
+        const now = Date.now();
+        const player = this.gameState.getFullState().player;
+
+        // 1. 玩家死亡时停止所有更新
+        if (player.health <= 0) return;
+
+        // 2. 生成敌人（按时间间隔与波次规则）
+        this._spawnEnemy();
+
+        // 3. 更新活跃敌人：移动、攻击（检测玩家是否在攻击范围内）
+        this.enemyState.activeEnemies.forEach(enemy => {
+            if (enemy.isDead) return;
+
+            // 3.1 敌人移动（调用敌人自身move方法）
+            enemy.move();
+
+            // 3.2 敌人攻击（玩家在攻击范围内且冷却结束）
+            const playerDistance = Math.sqrt(
+                Math.pow(player.x + player.width/2 - (enemy.x + enemy.width/2), 2) +
+                Math.pow(player.y + player.height/2 - (enemy.y + enemy.height/2), 2)
+            );
+            if (playerDistance <= enemy.attackRange) {
+                enemy.attack(this.enemyConfig.bulletConfig, this.enemyState.enemyBullets, this.objectPool);
+            }
+
+            // 3.3 敌人超出画布底部时销毁（避免内存占用）
+            if (enemy.y > this.gameLoop.canvas.height / window.GameGlobalConfig.canvas.pixelRatio + enemy.height) {
+                const index = this.enemyState.activeEnemies.indexOf(enemy);
+                if (index !== -1) {
+                    this.objectPool.recycleObject(enemy.typeId, enemy);
+                    this.enemyState.activeEnemies.splice(index, 1);
+                }
+            }
+        });
+
+        // 4. 更新敌人子弹：移动+超出画布销毁
+        for (let i = this.enemyState.enemyBullets.length - 1; i >= 0; i--) {
+            const bullet = this.enemyState.enemyBullets[i];
+            bullet.move();
+
+            // 子弹超出画布（上/下/左/右）则销毁
+            const canvasWidth = this.gameLoop.canvas.width / window.GameGlobalConfig.canvas.pixelRatio;
+            const canvasHeight = this.gameLoop.canvas.height / window.GameGlobalConfig.canvas.pixelRatio;
+            if (bullet.y > canvasHeight || bullet.y < -bullet.height || 
+                bullet.x > canvasWidth || bullet.x < -bullet.width) {
+                this.objectPool.recycleObject('enemyBullet', bullet);
+                this.enemyState.enemyBullets.splice(i, 1);
+            }
+        }
+
+        // 5. 检测波次切换
+        this._checkWaveSwitch();
+    }
+
+    /**
+     * 主循环渲染：绘制敌人、敌人子弹、死亡动画
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     * @param {number} deltaTime - 时间差（秒）
+     */
+    render(ctx, deltaTime) {
+        const now = Date.now();
+
+        // 1. 绘制活跃敌人（含死亡动画）
+        this.enemyState.activeEnemies.forEach(enemy => {
+            if (!enemy) return;
+
+            ctx.save();
+
+            // 1.1 死亡动画：渐隐红色覆盖层
+            if (enemy.isDead) {
+                const fadeProgress = 1 - (enemy.deathEffectEndTime - now) / enemy.deathEffectDuration;
+                ctx.globalAlpha = 0.6 * (1 - fadeProgress); // 随时间渐隐
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                ctx.globalAlpha = 1;
+            }
+
+            // 1.2 绘制敌人（优先图片，无则降级为彩色矩形）
+            if (enemy.image) {
+                ctx.drawImage(enemy.image, enemy.x, enemy.y, enemy.width, enemy.height);
+            } else {
+                ctx.fillStyle = enemy.color;
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                // 绘制白色边框（提升辨识度）
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            }
+
+            // 1.3 调试模式：绘制敌人碰撞框与攻击范围
+            if (window.GameGlobalConfig?.debug?.enableDebugMode) {
+                this._renderEnemyDebugInfo(ctx, enemy);
+            }
+
+            ctx.restore();
+        });
+
+        // 2. 绘制敌人子弹（优先图片，无则降级为矩形）
+        this.enemyState.enemyBullets.forEach(bullet => {
+            if (!bullet) return;
+
+            ctx.save();
+            if (bullet.image) {
+                ctx.drawImage(bullet.image, bullet.x, bullet.y, bullet.width, bullet.height);
+            } else {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+            ctx.restore();
+        });
+
+        // 3. 调试模式：绘制波次与生成信息
+        if (window.GameGlobalConfig?.debug?.enableDebugMode) {
+            this._renderDebugInfo(ctx);
+        }
+    }
+
+    /**
+     * 调试模式：绘制敌人碰撞框与攻击范围
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     * @param {Object} enemy - 敌人实例
+     */
+    _renderEnemyDebugInfo(ctx, enemy) {
+        // 1. 碰撞框（红色虚线）
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 2]);
+        ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        ctx.setLineDash([]);
+
+        // 2. 攻击范围（蓝色虚线圆）
+        ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
+        ctx.beginPath();
+        ctx.arc(
+            enemy.x + enemy.width/2,
+            enemy.y + enemy.height/2,
+            enemy.attackRange,
+            0,
+            Math.PI * 2
+        );
+        ctx.stroke();
+
+        // 3. 血量文字（顶部居中）
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+            `${enemy.health}/${enemy.maxHealth}`,
+            enemy.x + enemy.width/2,
+            enemy.y - 5
+        );
+        ctx.textAlign = 'start';
+    }
+
+    /**
+     * 调试模式：绘制波次、生成时间等信息
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     */
+    _renderDebugInfo(ctx) {
+        const now = Date.now();
+        const { currentWave, nextSpawnTime, nextWaveTime, spawnedThisWave } = this.enemyState;
+        const maxEnemyThisWave =
