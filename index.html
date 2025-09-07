@@ -121,49 +121,49 @@
 
     <!-- 4. 按拆分后的目录顺序引入JS脚本（核心！确保依赖正确） -->
     <!-- 4.1 配置层（1.config/：纯数据，无依赖） -->
-    <script src="js/1.config/GameGlobalConfig.js"></script>
-    <script src="js/1.config/PlayerConfig.js"></script>
-    <script src="js/1.config/BossConfig.js"></script>
-    <script src="js/1.config/EnemyConfig.js"></script>
-    <script src="js/1.config/SkillConfig.js"></script>
+    <script src="js/config/GameGlobalConfig.js"></script>
+    <script src="js/config/PlayerConfig.js"></script>
+    <script src="js/config/BossConfig.js"></script>
+    <script src="js/config/EnemyConfig.js"></script>
+    <script src="js/config/SkillConfig.js"></script>
 
     <!-- 4.2 工具层（2.util/：独立工具，无业务依赖） -->
-    <script src="js/2.util/DomUtil.js"></script>
-    <script src="js/2.util/MathUtil.js"></script>
-    <script src="js/2.util/ParticleUtil.js"></script>
-    <script src="js/2.util/TouchUtil.js"></script>
+    <script src="js/util/DomUtil.js"></script>
+    <script src="js/util/MathUtil.js"></script>
+    <script src="js/util/ParticleUtil.js"></script>
+    <script src="js/util/TouchUtil.js"></script>
 
     <!-- 4.3 核心层（3.core/：游戏运行基础，依赖配置+工具） -->
-    <script src="js/3.core/GameState.js"></script>
-    <script src="js/3.core/ObjectPool.js"></script>
-    <script src="js/3.core/EventBus.js"></script>
-    <script src="js/3.core/GameLoop.js"></script>
+    <script src="js/core/GameState.js"></script>
+    <script src="js/core/ObjectPool.js"></script>
+    <script src="js/core/EventBus.js"></script>
+    <script src="js/core/GameLoop.js"></script>
 
     <!-- 4.4 模块层（4.module/：游戏核心功能，依赖核心层） -->
     <!-- 玩家子模块 -->
-    <script src="js/4.module/player/Player.js"></script>
-    <script src="js/4.module/player/PlayerFireSystem.js"></script>
-    <script src="js/4.module/player/PlayerSkillSystem.js"></script>
+    <script src="js/module/player/Player.js"></script>
+    <script src="js/module/player/PlayerFireSystem.js"></script>
+    <script src="js/module/player/PlayerSkillSystem.js"></script>
     <!-- BOSS子模块 -->
-    <script src="js/4.module/boss/BossManager.js"></script>
-    <script src="js/4.module/boss/BossAttackSystem.js"></script>
-    <script src="js/4.module/boss/BossSkillSystem.js"></script>
-    <script src="js/4.module/boss/BossDropSystem.js"></script>
+    <script src="js/module/boss/BossManager.js"></script>
+    <script src="js/module/boss/BossAttackSystem.js"></script>
+    <script src="js/module/boss/BossSkillSystem.js"></script>
+    <script src="js/module/boss/BossDropSystem.js"></script>
     <!-- 通用子模块 -->
-    <script src="js/4.module/common/EnemyManager.js"></script>
-    <script src="js/4.module/common/AchievementManager.js"></script>
-    <script src="js/4.module/common/SoundManager.js"></script>
+    <script src="js/module/common/EnemyManager.js"></script>
+    <script src="js/module/common/AchievementManager.js"></script>
+    <script src="js/module/common/SoundManager.js"></script>
 
     <!-- 4.5 UI层（5.ui/：界面控制，依赖工具+核心层） -->
-    <script src="js/5.ui/UIManager.js"></script>
-    <script src="js/5.ui/GameInfoUI.js"></script>
-    <script src="js/5.ui/BossUI.js"></script>
-    <script src="js/5.ui/PopupUI.js"></script>
-    <script src="js/5.ui/SettingUI.js"></script>
-    <script src="js/5.ui/ControlUI.js"></script>
+    <script src="js/ui/UIManager.js"></script>
+    <script src="js/ui/GameInfoUI.js"></script>
+    <script src="js/ui/BossUI.js"></script>
+    <script src="js/ui/PopupUI.js"></script>
+    <script src="js/ui/SettingUI.js"></script>
+    <script src="js/ui/ControlUI.js"></script>
 
     <!-- 4.6 入口层（6.entry/：最后加载，初始化所有模块） -->
-    <script src="js/6.entry/GameMain.js"></script>
+    <script src="js/entry/GameMain.js"></script>
 
     <!-- 5. 页面加载完成后初始化（避免DOM未就绪导致错误） -->
     <script>
