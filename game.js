@@ -24,8 +24,8 @@ const lifeRegenTimer = document.getElementById('lifeRegenTimer');
 const regenTimeElement = document.getElementById('regenTime');
 const attackSpeedInfo = document.getElementById('attackSpeedInfo');
 const fireRateElement = document.getElementById('fireRate');
-const joystickModeToggle = document.getElementById('joystickModeToggle');
-const autoFireToggle = document.getElementById('autoFireToggle');
+const multiBulletIndicator = document.getElementById('multiBulletIndicator');
+const bulletLinesElement = document.getElementById('bulletLines');
 const skillShield = document.getElementById('skillShield');
 const skillRapid = document.getElementById('skillRapid');
 const cooldownShield = document.getElementById('cooldownShield');
@@ -33,10 +33,6 @@ const cooldownRapid = document.getElementById('cooldownRapid');
 const achievementNotification = document.getElementById('achievementNotification');
 const achievementDesc = document.getElementById('achievementDesc');
 const bossRedFlash = document.getElementById('bossRedFlash');
-const multiBulletIndicator = document.getElementById('multiBulletIndicator');
-const bulletLinesElement = document.getElementById('bulletLines');
-const shieldActiveIndicator = document.getElementById('shieldActive');
-const rapidActiveIndicator = document.getElementById('rapidActive');
 
 // 设置画布大小
 function resizeCanvas() {
@@ -59,7 +55,7 @@ let bossSpawnInterval;
 let gameLoopId;
 let fireInterval;
 let isFiring = false;
-let fireRate = 200; // 初始射击间隔200ms
+let fireRate = 200;
 let bossActive = false;
 let boss = null;
 let bossBullets = [];
@@ -67,13 +63,12 @@ let bossAttackInterval;
 let gameTime = 0;
 let timeToNextBoss = 90;
 let bossTimerInterval;
-let lifeRegenInterval;
 let timeToLifeRegen = 60;
 let lifeRegenTimerId;
 let playerHitEffect = 0;
 let particles = [];
 let explosions = [];
-let bulletLines = 1; // 初始弹道数量
+let bulletLines = 1;
 let achievements = {
     enemiesKilled: 0,
     survivalTime: 0,
@@ -86,14 +81,14 @@ let skills = {
         active: false,
         cooldown: 0,
         duration: 0,
-        maxCooldown: 450, // 7.5秒冷却
+        maxCooldown: 450,
         hits: 0
     },
     rapid: {
         active: false,
         cooldown: 0,
         duration: 0,
-        maxCooldown: 600, // 10秒冷却
+        maxCooldown: 600,
         originalFireRate: 0
     }
 };
@@ -119,8 +114,8 @@ const joystick = {
     handleY: 0,
     maxRadius: 40,
     direction: { x: 0, y: 0 },
-    deadZone: 5, // 死区范围
-    followMode: false // 固定摇杆模式
+    deadZone: 5,
+    followMode: false
 };
 
 // BOSS列表
@@ -135,7 +130,6 @@ const bosses = [
         bulletSpeed: 4,
         baseScore: 500,
         specialAttack: function() {
-            // 扇形子弹
             for (let i = -1; i <= 1; i++) {
                 const dx = (player.x + player.width/2) - (this.x + this.width/2);
                 const dy = (player.y + player.height/2) - (this.y + this.height/2);
@@ -156,80 +150,6 @@ const bosses = [
                 });
             }
         }
-    },
-    {
-        name: "死亡之翼",
-        width: 180,
-        height: 100,
-        baseHealth: 70,
-        color: '#9b59b6',
-        attackSpeed: 1200,
-        bulletSpeed: 5,
-        baseScore: 700,
-        minions: [],
-        specialAttack: function() {
-            // 召唤僚机
-            if (this.minions.length < 2 && this.currentHealth < this.health / 2) {
-                for (let i = 0; i < 2; i++) {
-                    this.minions.push({
-                        x: this.x + (i * 50) - 25,
-                        y: this.y + this.height,
-                        width: 30,
-                        height: 30,
-                        speed: 2,
-                        color: '#3498db',
-                        health: 10
-                    });
-                }
-            }
-            
-            // 僚机攻击
-            this.minions.forEach(minion => {
-                const dx = (player.x + player.width/2) - (minion.x + minion.width/2);
-                const dy = (player.y + player.height/2) - (minion.y + minion.height/2);
-                const angle = Math.atan2(dy, dx);
-                
-                const speedX = Math.cos(angle) * this.bulletSpeed;
-                const speedY = Math.sin(angle) * this.bulletSpeed;
-                
-                bossBullets.push({
-                    x: minion.x + minion.width / 2 - 10,
-                    y: minion.y + minion.height / 2 - 10,
-                    width: 20,
-                    height: 20,
-                    speedX: speedX,
-                    speedY: speedY,
-                    color: '#3498db',
-                    pulse: false
-                });
-            });
-        }
-    },
-    {
-        name: "末日战舰",
-        width: 200,
-        height: 120,
-        baseHealth: 100,
-        color: '#3498db',
-        attackSpeed: 1000,
-        bulletSpeed: 6,
-        baseScore: 1000,
-        specialAttack: function() {
-            // 全屏冲击波
-            if (Math.random() < 0.1) {
-                bossBullets.push({
-                    x: 0,
-                    y: canvas.height / 2 - 50,
-                    width: canvas.width,
-                    height: 100,
-                    speedX: 0,
-                    speedY: 0,
-                    color: 'rgba(231, 76, 60, 0.3)',
-                    shockwave: true,
-                    duration: 100
-                });
-            }
-        }
     }
 ];
 
@@ -239,7 +159,7 @@ let bullets = [];
 // 敌人数组
 let enemies = [];
 
-// 星星数组（背景） - 三层parallax
+// 星星数组
 let starsNear = [];
 let starsMid = [];
 let starsFar = [];
@@ -320,8 +240,8 @@ function initGame() {
     lives = 3;
     level = 1;
     nextLevelScore = 100;
-    fireRate = 200; // 重置射击间隔
-    bulletLines = 1; // 重置弹道数量
+    fireRate = 200;
+    bulletLines = 1;
     bullets = [];
     enemies = [];
     bossBullets = [];
@@ -367,10 +287,10 @@ function initGame() {
     initStars();
     
     // 设置摇杆模式
-    joystick.followMode = !joystickModeToggle.checked;
+    joystick.followMode = !document.getElementById('joystickModeToggle').checked;
     
     // 设置自动射击
-    if (autoFireToggle.checked) {
+    if (document.getElementById('autoFireToggle').checked) {
         startFiring();
     }
     
@@ -479,8 +399,8 @@ function spawnBoss() {
         const bossType = bosses[Math.floor(Math.random() * bosses.length)];
         
         // 根据等级计算BOSS属性
-        const healthMultiplier = 1 + (level * 0.1); // 每级增加10%血量
-        const scoreMultiplier = 1 + (level * 0.2); // 每级增加20%分数
+        const healthMultiplier = 1 + (level * 0.1);
+        const scoreMultiplier = 1 + (level * 0.2);
         
         boss = {
             ...bossType,
@@ -513,7 +433,7 @@ function spawnBoss() {
     }, 3000);
 }
 
-// BOSS攻击（向玩家发射子弹）
+// BOSS攻击
 function bossAttack() {
     if (!boss || !gameRunning) return;
     
@@ -524,7 +444,7 @@ function bossAttack() {
     
     // 计算子弹速度分量
     const speedX = Math.cos(angle) * boss.bulletSpeed;
-    const speedY = Math.sin(angle) * boss.bulletSpeed;
+    const speedY = Math.sin(angle) * boss.bul极Speed;
     
     // 从BOSS中心发射子弹
     bossBullets.push({
@@ -568,7 +488,7 @@ function fireBullet() {
     
     // 根据弹道数量发射子弹
     for (let i = 0; i < bulletLines; i++) {
-        // 计算子弹偏移（奇数弹道时中间一发，偶数弹道时对称分布）
+        // 计算子弹偏移
         let offsetX = 0;
         if (bulletLines > 1) {
             const spacing = 10;
@@ -604,8 +524,8 @@ function fireBullet() {
 function startFiring() {
     if (!isFiring) {
         isFiring = true;
-        fireBullet(); // 立即发射第一颗子弹
-        fireInterval = setInterval(fireBullet, fireRate); // 根据当前射速发射
+        fireBullet();
+        fireInterval = setInterval(fireBullet, fireRate);
     }
 }
 
@@ -629,7 +549,7 @@ function checkLevelUp() {
         
         nextLevelScore = Math.floor(nextLevelScore * multiplier);
         
-        // 提高攻击速度（每级减少20ms，最低100ms）
+        // 提高攻击速度
         fireRate = Math.max(100, fireRate - 20);
         fireRateElement.textContent = fireRate;
         
@@ -646,10 +566,10 @@ function checkLevelUp() {
             bulletUpMsg.style.left = '50%';
             bulletUpMsg.style.transform = 'translate(-50%, -50%)';
             bulletUpMsg.style.color = '#f1c40f';
-            bulletUpMsg.style.fontSize = '24px';
+            bullet极Msg.style.fontSize = '24px';
             bulletUpMsg.style.textShadow = '0 0 5px #000';
             bulletUpMsg.style.animation = 'fadeOut 2s forwards';
-            bulletUpMsg.style.zIndex = '15';
+            bulletUpMsg.style.z极 = '15';
             
             document.getElementById('gameContainer').appendChild(bulletUpMsg);
             
@@ -711,7 +631,7 @@ function gameLoop(timestamp) {
     if (!gameRunning) return;
     
     // 更新游戏时间
-    gameTime += 16; // 大约16ms每帧
+    gameTime += 16;
     achievements.survivalTime = Math.floor(gameTime / 1000);
     
     // 清除画布
@@ -728,7 +648,7 @@ function gameLoop(timestamp) {
     updateParticles();
     drawParticles();
     
-    // 更新和绘制玩家（如果不在无敌状态或闪烁可见）
+    // 更新和绘制玩家
     if (!player.invincible || Math.floor(gameTime / 100) % 2 === 0) {
         updatePlayer();
         drawPlayer();
@@ -747,12 +667,6 @@ function gameLoop(timestamp) {
         drawBoss();
         updateBossBullets();
         drawBossBullets();
-        
-        // 更新BOSS僚机
-        if (boss.minions) {
-            updateMinions();
-            drawMinions();
-        }
     }
     
     // 检查碰撞
@@ -771,7 +685,7 @@ function gameLoop(timestamp) {
     gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-// 更新玩家位置（基于轮盘输入）
+// 更新玩家位置
 function updatePlayer() {
     if (joystick.isActive) {
         player.x += joystick.direction.x * player.speed;
@@ -791,7 +705,7 @@ function updatePlayer() {
 // 绘制玩家飞船
 function drawPlayer() {
     if (player.invincible && Math.floor(gameTime / 100) % 2 === 0) {
-        return; // 无敌状态时闪烁
+        return;
     }
     
     // 绘制护盾
@@ -824,7 +738,7 @@ function drawPlayer() {
         ctx.fillStyle = '#e74c3c';
         ctx.beginPath();
         ctx.moveTo(player.x + player.width / 2 - 8, player.y + player.height);
-        ctx.lineTo(player.x + player.width / 2 + 8, player.y + player.height);
+        ctx.lineTo(player极 + player.width / 2 + 8, player.y + player.height);
         ctx.lineTo(player.x + player.width / 2, player.y + player.height + flameLength);
         ctx.closePath();
         ctx.fill();
@@ -871,7 +785,7 @@ function drawBullets() {
     });
 }
 
-// 生成敌人（根据等级调整属性）
+// 生成敌人
 function spawnEnemy() {
     if (!gameRunning || bossActive) return;
     
@@ -879,9 +793,9 @@ function spawnEnemy() {
     let enemySize, enemySpeed, enemyHealth, enemyScore;
     
     // 根据等级计算敌人属性
-    const speedMultiplier = 1 + (level * 0.1); // 每级增加10%速度
-    const healthMultiplier = 1 + (level * 0.15); // 每级增加15%血量
-    const scoreMultiplier = 1 + (level * 0.1); // 每级增加10%分数
+    const speedMultiplier = 1 + (level * 0.1);
+    const healthMultiplier = 1 + (level * 0.15);
+    const scoreMultiplier = 1 + (level * 0.1);
     
     switch (enemyType) {
         case 'fast':
@@ -919,7 +833,7 @@ function spawnEnemy() {
 
 // 更新敌人位置
 function updateEnemies() {
-    for (let i = enemies.length - 1; i >= 0; i--) {
+    for (let i = enemies.length - 1; i >= 极; i--) {
         enemies[i].y += enemies[i].speed;
         
         // 移除超出屏幕的敌人
@@ -992,51 +906,6 @@ function drawEnemies() {
     });
 }
 
-// 更新BOSS僚机
-function updateMinions() {
-    for (let i = boss.minions.length - 1; i >= 0; i--) {
-        const minion = boss.minions[i];
-        
-        // 僚机跟随BOSS移动
-        minion.x = boss.x + (i * 50) - 25;
-        minion.y = boss.y + boss.height;
-        
-        // 检查僚机是否被击中
-        for (let j = bullets.length - 1; j >= 0; j--) {
-            if (isColliding(bullets[j], minion)) {
-                minion.health--;
-                bullets.splice(j, 1);
-                
-                // 僚机被摧毁
-                if (minion.health <= 0) {
-                    boss.minions.splice(i, 1);
-                    createExplosion(minion.x + minion.width/2, minion.y + minion.height/2, 30, '#3498db');
-                    score += 50;
-                    updateUI();
-                }
-                break;
-            }
-        }
-    }
-}
-
-// 绘制BOSS僚机
-function drawMinions() {
-    boss.minions.forEach(minion => {
-        ctx.fillStyle = minion.color;
-        ctx.beginPath();
-        ctx.arc(minion.x + minion.width/2, minion.y + minion.height/2, minion.width/2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 绘制僚机血条
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillRect(minion.x, minion.y - 10, minion.width, 4);
-        
-        ctx.fillStyle = '#3498db';
-        ctx.fillRect(minion.x, minion.y - 10, minion.width * (minion.health / 10), 4);
-    });
-}
-
 // 绘制BOSS
 function drawBoss() {
     if (!boss) return;
@@ -1055,48 +924,12 @@ function drawBoss() {
     // 绘制BOSS炮口
     ctx.fillStyle = '#000';
     ctx.fillRect(boss.x + boss.width / 2 - 15, boss.y + boss.height / 2 - 5, 30, 10);
-    
-    // 绘制BOSS伤害数字
-    if (boss.damageTaken > 0) {
-        const damagePopup = document.createElement('div');
-        damagePopup.className = 'damage-popup';
-        damagePopup.textContent = `-${boss.damageTaken}`;
-        damagePopup.style.left = `${boss.x + boss.width/2}px`;
-        damagePopup.style.top = `${boss.y - 20}px`;
-        document.getElementById('gameContainer').appendChild(damagePopup);
-        
-        setTimeout(() => {
-            damagePopup.remove();
-        }, 1000);
-        
-        boss.damageTaken = 0;
-    }
 }
 
 // 更新BOSS子弹位置
 function updateBossBullets() {
     for (let i = bossBullets.length - 1; i >= 0; i--) {
         const bullet = bossBullets[i];
-        
-        // 冲击波特殊处理
-        if (bullet.shockwave) {
-            bullet.duration--;
-            if (bullet.duration <= 0) {
-                bossBullets.splice(i, 1);
-                
-                // 检查玩家是否在冲击波范围内
-                if (isColliding(player, bullet)) {
-                    lives--;
-                    updateUI();
-                    playerHitEffect = 10;
-                    
-                    if (lives <= 0) {
-                        gameOver();
-                    }
-                }
-            }
-            continue;
-        }
         
         bullet.x += bullet.speedX;
         bullet.y += bullet.speedY;
@@ -1112,13 +945,6 @@ function updateBossBullets() {
 // 绘制BOSS子弹
 function drawBossBullets() {
     bossBullets.forEach(bullet => {
-        if (bullet.shockwave) {
-            // 绘制冲击波警告
-            ctx.fillStyle = bullet.color;
-            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-            return;
-        }
-        
         // 脉冲子弹特效
         if (bullet.pulse) {
             const pulseSize = 5 + Math.sin(Date.now() / 100) * 3;
@@ -1198,7 +1024,7 @@ function checkCollisions() {
                 damagePopup.className = 'damage-popup';
                 damagePopup.textContent = '-1';
                 damagePopup.style.left = `${enemies[j].x + enemies[j].width/2}px`;
-                damagePopup.style.top = `${enemies[j].y - 10}px`;
+                damagePopup.style.top = `${enemies[j].y - 10极px`;
                 document.getElementById('gameContainer').appendChild(damagePopup);
                 
                 setTimeout(() => {
@@ -1212,7 +1038,7 @@ function checkCollisions() {
                     
                     // 创建爆炸效果
                     createExplosion(
-                        enemies[j].x + enemies[j].width/2, 
+                        enemies[j].极 + enemies[j].width/2, 
                         enemies[j].y + enemies[j].height/2, 
                         enemies[j].width, 
                         enemies[j].color
@@ -1271,7 +1097,7 @@ function checkCollisions() {
             bullets.splice(i, 1);
             
             // 检查BOSS是否被击败
-            if (boss.currentHealth <= 0) {
+            if (boss.currentHealth <= 极) {
                 // 增加分数
                 score += boss.score;
                 
@@ -1344,7 +1170,7 @@ function checkCollisions() {
                     skills.shield.active = false;
                     skills.shield.cooldown = skills.shield.maxCooldown;
                     player.shield = false;
-                    shieldActiveIndicator.style.display = 'none';
+                    document.getElementById('shieldActive').style.display = 'none';
                     
                     // 护盾破碎特效
                     createExplosion(
@@ -1407,7 +1233,7 @@ function checkCollisions() {
                         speedX: (Math.random() - 0.5) * 5,
                         speedY: (Math.random() - 0.5) * 5,
                         color: '#3498db',
-                        life: 20
+                        life极 20
                     });
                 }
                 
@@ -1415,12 +1241,12 @@ function checkCollisions() {
                     skills.shield.active = false;
                     skills.shield.cooldown = skills.shield.maxCooldown;
                     player.shield = false;
-                    shieldActiveIndicator.style.display = 'none';
+                    document.getElementById('shieldActive').style.display = 'none';
                     
                     // 护盾破碎特效
                     createExplosion(
                         player.x + player.width/2,
-                        player.y + player.height/2,
+                        player.y + player极height/2,
                         50,
                         '#3498db'
                     );
@@ -1473,13 +1299,13 @@ function updateSkills() {
     // 护盾技能
     if (skills.shield.active) {
         skills.shield.duration--;
-        shieldActiveIndicator.style.display = 'block';
+        document.getElementById('shieldActive').style.display = 'block';
         
         if (skills.shield.duration <= 0 || skills.shield.hits >= 3) {
             skills.shield.active = false;
             skills.shield.cooldown = skills.shield.maxCooldown;
             player.shield = false;
-            shieldActiveIndicator.style.display = 'none';
+            document.getElementById('shieldActive').style.display = 'none';
         }
     } else if (skills.shield.cooldown > 0) {
         skills.shield.cooldown--;
@@ -1492,14 +1318,14 @@ function updateSkills() {
     // 射速爆发技能
     if (skills.rapid.active) {
         skills.rapid.duration--;
-        rapidActiveIndicator.style.display = 'block';
+        document.getElementById('rapidActive').style.display = 'block';
         
         if (skills.rapid.duration <= 0) {
             skills.rapid.active = false;
             skills.rapid.cooldown = skills.rapid.maxCooldown;
             fireRate = skills.rapid.originalFireRate;
             fireRateElement.textContent = fireRate;
-            rapidActiveIndicator.style.display = 'none';
+            document.getElementById('rapidActive').style.display = 'none';
             
             // 更新射击间隔
             if (isFiring) {
@@ -1509,7 +1335,7 @@ function updateSkills() {
         }
     } else if (skills.rapid.cooldown > 0) {
         skills.rapid.cooldown--;
-        cooldownRapid.textContent = Math.ceil(skills.rapid.cooldown / 60);
+        cooldownRapid.textContent = Math.ceil(s极ills.rapid.cooldown / 60);
         cooldownRapid.style.display = 'flex';
     } else {
         cooldownRapid.style.display = 'none';
@@ -1521,7 +1347,7 @@ function checkAchievements() {
     // 击败100个敌人
     if (achievements.enemiesKilled >= 100) {
         showAchievement("百人斩", "击败100个敌人!");
-        achievements.enemiesKilled = -999; // 防止重复触发
+        achievements.enemiesKilled = -999;
     }
     
     // 存活5分钟
@@ -1574,7 +1400,7 @@ function gameOver() {
         player.x + player.width/2,
         player.y + player.height/2,
         80,
-        '#e74c3c'
+        '#e74c极c'
     );
     
     // 震动反馈（移动端）
@@ -1596,7 +1422,7 @@ function setupJoystick() {
     joystickArea.addEventListener('touchmove', handleTouchMove);
     joystickArea.addEventListener('touchend', handleTouchEnd);
     
-    // 鼠标事件（用于测试）
+    // 鼠标事件
     joystickArea.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -1621,7 +1447,7 @@ function handleTouchStart(e) {
         joystickBase.style.top = `${joystick.baseY - rect.top - 40}px`;
     }
     
-    updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
+    updateJoystickPosition(e.touches[0].clientX, e.t极ches[0].clientY);
 }
 
 function handleTouchMove(e) {
@@ -1643,7 +1469,7 @@ function handleMouseDown(e) {
 
 function handleMouseMove(e) {
     if (joystick.isActive) {
-        updateJoystickPosition(e.clientX, e.clientY);
+        updateJoystickPosition(e.client极, e.clientY);
     }
 }
 
@@ -1673,7 +1499,7 @@ function updateJoystickPosition(clientX, clientY) {
         joystick.direction.x = limitedX / joystick.maxRadius;
         joystick.direction.y = limitedY / joystick.maxRadius;
     } else {
-        joystickHandle.style.transform = `translate(${dx}px, ${dy}px)`;
+        joystickHandle.style.transform = `translate($极x}px, ${dy}px)`;
         joystick.direction.x = dx / joystick.maxRadius;
         joystick.direction.y = dy / joystick.maxRadius;
     }
@@ -1684,40 +1510,40 @@ function setupFireButton() {
     // 触摸事件
     fireButton.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        if (!autoFireToggle.checked) {
+        if (!document.getElementById('autoFireToggle').checked) {
             startFiring();
         }
     });
     
     fireButton.addEventListener('touchend', (e) => {
         e.preventDefault();
-        if (!autoFireToggle.checked) {
+        if (!document.getElementById('autoFireToggle').checked) {
             stopFiring();
         }
     });
     
-    fireButton.addEventListener('touchcancel', (e) => {
+    fireButton.addEventListener('touchcancel', (e极) => {
         e.preventDefault();
-        if (!autoFireToggle.checked) {
+        if (!document.getElementById('autoFireToggle').checked) {
             stopFiring();
         }
     });
     
     // 鼠标事件
     fireButton.addEventListener('mousedown', () => {
-        if (!autoFireToggle.checked) {
+        if (!document.getElementById('autoFireToggle').checked) {
             startFiring();
         }
     });
     
     fireButton.addEventListener('mouseup', () => {
-        if (!autoFireToggle.checked) {
+        if (!document.getElementById('autoFireToggle').checked) {
             stopFiring();
         }
     });
     
     fireButton.addEventListener('mouseleave', () => {
-        if (!autoFireToggle.checked) {
+        if (!document.getElementById('autoFireToggle').checked) {
             stopFiring();
         }
     });
@@ -1726,57 +1552,83 @@ function setupFireButton() {
 // 技能按钮事件
 function setupSkillButtons() {
     // 护盾技能 - 持续时间延长至20秒
-    skillShield.addEventListener('click', () => {
+    skillShield.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!skills.shield.active && skills.shield.cooldown <= 0) {
-            skills.shield.active = true;
-            skills.shield.duration = 200; // 20秒持续时间
-            skills.shield.hits = 0;
-            player.shield = true;
-            
-            // 护盾激活特效
-            for (let i = 0; i < 30; i++) {
-                particles.push({
-                    x: player.x + player.width/2,
-                    y: player.y + player.height/2,
-                    size: Math.random() * 3 + 2,
-                    speedX: (Math.random() - 0.5) * 4,
-                    speedY: (Math.random() - 0.5) * 4,
-                    color: '#3498db',
-                    life: 30
-                });
-            }
+            activateShield();
+        }
+    });
+    
+    skillShield.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        if (!skills.shield.active && skills.shield.cooldown <= 0) {
+            activateShield();
         }
     });
     
     // 射速爆发技能 - 持续时间延长至12秒
-    skillRapid.addEventListener('click', () => {
+    skillRapid.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!skills.rapid.active && skills.rapid.cooldown <= 0) {
-            skills.rapid.active = true;
-            skills.rapid.duration = 120; // 12秒持续时间
-            skills.rapid.originalFireRate = fireRate;
-            fireRate = Math.max(50, fireRate / 3); // 射速提升66%
-            fireRateElement.textContent = fireRate;
-            
-            // 射速爆发特效
-            for (let i = 0; i < 20; i++) {
-                particles.push({
-                    x: player.x + player.width/2,
-                    y: player.y,
-                    size: Math.random() * 2 + 1,
-                    speedX: (Math.random() - 0.5) * 3,
-                    speedY: -Math.random() * 8 - 4,
-                    color: '#f1c40f',
-                    life: 20
-                });
-            }
-            
-            // 更新射击间隔
-            if (isFiring) {
-                clearInterval(fireInterval);
-                fireInterval = setInterval(fireBullet, fireRate);
-            }
+            activateRapidFire();
         }
     });
+    
+    skillRapid.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        if (!skills.rapid.active && skills.rapid.cooldown <= 极) {
+            activateRapidFire();
+        }
+    });
+}
+
+function activateShield() {
+    skills.shield.active = true;
+    skills.shield.duration = 200; // 20秒持续时间
+    skills.shield.hits = 0;
+    player.shield = true;
+    
+    // 护盾激活特效
+    for (let i = 0; i < 30; i++) {
+        particles.push({
+            x: player.x + player.width/2,
+            y极 player.y + player.height/2,
+            size: Math.random() * 3 + 2,
+            speedX: (Math.random() - 0.5) * 4,
+            speedY: (Math.random() - 0.5) * 4,
+            color: '#3498db',
+            life: 30
+        });
+    }
+}
+
+function activateRapidFire() {
+    skills.rapid.active = true;
+    skills.rapid.duration = 120; // 12秒持续时间
+    skills.rapid.originalFireRate = fireRate;
+    fireRate = Math.max(50, fireRate / 3); // 射速提升66%
+    fireRateElement.textContent = fireRate;
+    
+    // 射速爆发特效
+    for (let i = 0; i < 20; i++) {
+        particles.push({
+            x: player.x + player.width/2,
+            y: player.y,
+            size: Math.random() * 2 + 1,
+            speedX: (Math.random() - 0.5) * 3,
+            speedY: -Math.random() * 8 - 4,
+            color: '#f1c40f',
+            life: 20
+        });
+    }
+    
+    // 更新射击间隔
+    if (isFiring) {
+        clearInterval(fireInterval);
+        fireInterval = setInterval(fireBullet, fireRate);
+    }
 }
 
 // 初始化事件监听
@@ -1799,15 +1651,15 @@ function initEventListeners() {
     });
     
     // 摇杆模式切换
-    joystickModeToggle.addEventListener('change', () => {
-        joystick.followMode = !joystickModeToggle.checked;
+    document.getElementById('joystickModeToggle').addEventListener('change', () => {
+        joystick.followMode = !document.getElementById('joystickModeToggle').checked;
     });
     
     // 自动射击切换
-    autoFireToggle.addEventListener('change', () => {
-        if (!autoFireToggle.checked && isFiring) {
+    document.getElementById('autoFireToggle').addEventListener('change', () => {
+        if (!document.getElementById('autoFireToggle').checked && isFiring) {
             stopFiring();
-        } else if (autoFireToggle.checked && gameRunning) {
+        } else if (document.getElementById('autoFireToggle').checked && gameRunning) {
             startFiring();
         }
     });
