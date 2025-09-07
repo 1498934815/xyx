@@ -425,3 +425,244 @@ class AchievementManager {
      * 根据成就ID获取成就配置（跨类型查找）
      * @param {string} achievementId - 成就ID
      * @returns {Object|null} 成就配置（无
+     * 则返回null）
+     */
+    _getAchievementById(achievementId) {
+        // 遍历所有成就分类，查找匹配ID的成就
+        for (const groupKey of Object.keys(this.achievementConfig)) {
+            const target = this.achievementConfig[groupKey].find(
+                achievement => achievement.id === achievementId
+            );
+            if (target) return target;
+        }
+        return null;
+    }
+
+    /**
+     * 主循环更新：处理成就解锁动画队列（控制动画播放时长）
+     * @param {number} deltaTime - 时间差（秒）
+     */
+    update(deltaTime) {
+        const now = Date.now();
+        const animationDuration = 5000; // 成就解锁动画持续时长（5秒）
+
+        // 过滤已过期的动画（超过播放时长）
+        this.achievementState.pendingAnimations = this.achievementState.pendingAnimations.filter(
+            anim => now - anim.startTime < animationDuration
+        );
+
+        // 定期保存成就进度（依赖主循环触发）
+        this._saveToLocalStorage();
+    }
+
+    /**
+     * 主循环渲染：绘制成就解锁动画（屏幕底部弹窗）
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     * @param {number} deltaTime - 时间差（秒）
+     */
+    render(ctx, deltaTime) {
+        const now = Date.now();
+        const canvasWidth = this.gameLoop.canvas.width / window.GameGlobalConfig.canvas.pixelRatio;
+        const animationDuration = 5000; // 与update保持一致的动画时长
+        const popupWidth = 300;
+        const popupHeight = 100;
+        const popupPadding = 15;
+        const iconSize = 70; // 成就图标尺寸
+        const baseY = this.gameLoop.canvas.height / window.GameGlobalConfig.canvas.pixelRatio - 120; // 弹窗基础Y坐标
+
+        // 遍历待播放的动画队列，逐个绘制弹窗
+        this.achievementState.pendingAnimations.forEach((anim, index) => {
+            const achievement = this._getAchievementById(anim.id);
+            if (!achievement) return;
+
+            // 计算动画进度（0~1，控制透明度与位置）
+            const progress = (now - anim.startTime) / animationDuration;
+            const alpha = progress < 0.1 ? progress / 0.1 : (progress > 0.9 ? (1 - progress) / 0.1 : 1); // 淡入淡出效果
+            const offsetY = progress < 0.1 ? -50 + progress * 500 : 0; // 初始向上偏移，淡入时归位
+            const currentY = baseY - index * (popupHeight + 10) + offsetY; // 多个弹窗上下排列
+
+            // 1. 绘制弹窗背景（半透明白色圆角矩形）
+            ctx.save();
+            ctx.globalAlpha = alpha * 0.9;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.roundRect(
+                (canvasWidth - popupWidth) / 2,
+                currentY,
+                popupWidth,
+                popupHeight,
+                10 // 圆角半径
+            );
+            ctx.fill();
+            // 绘制弹窗边框（深色）
+            ctx.strokeStyle = 'rgba(50, 50, 50, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // 2. 绘制成就图标（优先使用资源，无则降级为彩色圆形）
+            const iconX = (canvasWidth - popupWidth) / 2 + popupPadding;
+            const iconY = currentY + (popupHeight - iconSize) / 2;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            const icon = window.GameMain.getLoadedResource('images', achievement.iconKey);
+            if (icon) {
+                ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
+            } else {
+                // 降级图标：根据成就类型设置颜色
+                const typeColors = { battle: 'rgba(231, 76, 60, 0.8)', score: 'rgba(241, 196, 15, 0.8)', collect: 'rgba(46, 204, 113, 0.8)' };
+                ctx.fillStyle = typeColors[achievement.type] || 'rgba(155, 89, 182, 0.8)';
+                ctx.beginPath();
+                ctx.arc(iconX + iconSize/2, iconY + iconSize/2, iconSize/2, 0, Math.PI * 2);
+                ctx.fill();
+                // 绘制白色边框
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+
+            // 3. 绘制成就文字（名称+描述）
+            const textX = iconX + iconSize + popupPadding;
+            const textY = currentY + popupPadding + 20;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            // 成就名称（粗体）
+            ctx.fillStyle = 'rgba(30, 30, 30, 0.9)';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(`成就解锁：${achievement.name}`, textX, textY);
+            // 成就描述（常规字体）
+            ctx.font = '12px Arial';
+            ctx.fillStyle = 'rgba(70, 70, 70, 0.8)';
+            ctx.fillText(achievement.desc, textX, textY + 25);
+            // 奖励提示（浅色小字）
+            const rewardText = this._getRewardText(achievement.reward);
+            ctx.font = '11px Arial';
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.7)';
+            ctx.fillText(`奖励：${rewardText}`, textX, textY + 45);
+            ctx.globalAlpha = 1;
+            ctx.restore();
+
+            ctx.restore();
+        });
+    }
+
+    /**
+     * 生成奖励文字描述（用于渲染弹窗）
+     * @param {Object} reward - 奖励配置
+     * @returns {string} 奖励文字（如“+10000分”）
+     */
+    _getRewardText(reward) {
+        if (!reward) return '无';
+        switch (reward.type) {
+            case 'score':
+                return `+${reward.value}分`;
+            case 'life':
+                return `+${reward.value}条生命`;
+            case 'skillShard':
+                return reward.skillKey === 'all' ? '所有技能碎片各1个' : `${reward.skillKey}碎片x${reward.value}`;
+            case 'skillUnlocked':
+                return `解锁${reward.skillKey}技能`;
+            default:
+                return '未知奖励';
+        }
+    }
+
+    /**
+     * 对外接口：获取所有成就状态（供成就UI页面显示）
+     * @param {string} [groupKey=''] - 成就分类（如battle/score，空则返回所有）
+     * @returns {Array<Object>} 成就列表（含ID、名称、进度、解锁状态）
+     */
+    getAchievementList(groupKey = '') {
+        let result = [];
+        if (groupKey && this.achievementConfig[groupKey]) {
+            // 返回指定分类的成就
+            result = this.achievementConfig[groupKey].map(achievement => ({
+                id: achievement.id,
+                name: achievement.name,
+                desc: achievement.desc,
+                type: achievement.type,
+                iconKey: achievement.iconKey,
+                progress: `${achievement.condition.current}/${achievement.condition.target}`,
+                progressPercent: Math.min(100, Math.floor((achievement.condition.current / achievement.condition.target) * 100)),
+                isUnlocked: achievement.isUnlocked,
+                rewardText: this._getRewardText(achievement.reward)
+            }));
+        } else {
+            // 返回所有分类的成就（按分类分组）
+            Object.keys(this.achievementConfig).forEach(key => {
+                result.push({
+                    groupKey: key,
+                    groupName: this._getGroupNameByKey(key),
+                    achievements: this.achievementConfig[key].map(achievement => ({
+                        id: achievement.id,
+                        name: achievement.name,
+                        desc: achievement.desc,
+                        type: achievement.type,
+                        iconKey: achievement.iconKey,
+                        progress: `${achievement.condition.current}/${achievement.condition.target}`,
+                        progressPercent: Math.min(100, Math.floor((achievement.condition.current / achievement.condition.target) * 100)),
+                        isUnlocked: achievement.isUnlocked,
+                        rewardText: this._getRewardText(achievement.reward)
+                    }))
+                });
+            });
+        }
+        return result;
+    }
+
+    /**
+     * 根据分类键获取分类名称（用于UI显示）
+     * @param {string} groupKey - 分类键（如battle）
+     * @returns {string} 分类名称（如“战斗类”）
+     */
+    _getGroupNameByKey(groupKey) {
+        const groupNames = { battle: '战斗类', score: '得分类', collect: '收集类' };
+        return groupNames[groupKey] || groupKey;
+    }
+
+    /**
+     * 对外接口：手动触发成就解锁（测试/剧情场景）
+     * @param {string} achievementId - 成就ID
+     */
+    triggerAchievementUnlock(achievementId) {
+        const achievement = this._getAchievementById(achievementId);
+        if (!achievement || achievement.isUnlocked) return;
+
+        // 强制更新进度为目标值，触发解锁
+        achievement.condition.current = achievement.condition.target;
+        this._checkAchievementUnlock(achievement);
+    }
+
+    /**
+     * 对外接口：获取已解锁成就数量（供UI显示统计）
+     * @returns {number} 已解锁成就总数
+     */
+    getUnlockedCount() {
+        let count = 0;
+        Object.values(this.achievementConfig).forEach(group => {
+            count += group.filter(achievement => achievement.isUnlocked).length;
+        });
+        return count;
+    }
+
+    /**
+     * 对外接口：获取总成就数量（供UI显示统计）
+     * @returns {number} 成就总数
+     */
+    getTotalCount() {
+        let count = 0;
+        Object.values(this.achievementConfig).forEach(group => {
+            count += group.length;
+        });
+        return count;
+    }
+}
+
+// 导出成就管理系统类（兼容Node.js和浏览器环境）
+try {
+    module.exports = AchievementManager;
+} catch (e) {
+    // 浏览器环境挂载到window，供游戏主模块调用
+    window.AchievementManager = AchievementManager;
+}
