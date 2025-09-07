@@ -758,4 +758,136 @@ class EnemyManager {
     _renderDebugInfo(ctx) {
         const now = Date.now();
         const { currentWave, nextSpawnTime, nextWaveTime, spawnedThisWave } = this.enemyState;
-        const maxEnemyThisWave =
+        const maxEnemyThisWave = this.enemyConfig.spawn.enemyPerWave + Math.floor(currentWave * 0.5);
+        const nextSpawnIn = Math.max(0, Math.floor((nextSpawnTime - now) / 1000));
+        const nextWaveIn = Math.max(0, Math.floor((nextWaveTime - now) / 1000));
+
+        ctx.save();
+        ctx.fillStyle = 'white';
+        ctx.font = '14px Arial';
+        let debugY = 120; // 调试信息Y坐标（避开技能系统调试信息）
+        ctx.fillText('=== 敌人管理器调试信息 ===', 10, debugY);
+        debugY += 20;
+        ctx.fillText(`当前波次：${currentWave}`, 10, debugY);
+        debugY += 18;
+        ctx.fillText(`本波已生成：${spawnedThisWave}/${maxEnemyThisWave}`, 10, debugY);
+        debugY += 18;
+        ctx.fillText(`下次生成：${nextSpawnIn}s`, 10, debugY);
+        debugY += 18;
+        ctx.fillText(`下一波次：${nextWaveIn}s`, 10, debugY);
+        debugY += 18;
+        ctx.fillText(`活跃敌人：${this.enemyState.activeEnemies.length}/${this.enemyConfig.spawn.maxActiveEnemies}`, 10, debugY);
+        debugY += 18;
+        ctx.fillText(`活跃子弹：${this.enemyState.enemyBullets.length}`, 10, debugY);
+        ctx.restore();
+    }
+
+    /**
+     * 对外接口：手动生成指定类型敌人（测试场景）
+     * @param {string} enemyTypeId - 敌人类型ID（如enemySmall）
+     * @param {Object} [pos={}] - 生成位置（x/y，默认随机）
+     */
+    spawnEnemyManually(enemyTypeId, pos = {}) {
+        const enemyType = this.enemyConfig.enemyTypes.find(type => type.id === enemyTypeId);
+        if (!enemyType) {
+            console.warn(`[EnemyManager Warn] 无效敌人类型ID：${enemyTypeId}`);
+            return;
+        }
+
+        const now = Date.now();
+        const canvasWidth = this.gameLoop.canvas.width / window.GameGlobalConfig.canvas.pixelRatio;
+        // 默认随机位置（顶部外生成）
+        const spawnX = pos.x || Math.random() * (canvasWidth - enemyType.baseAttr.width - 100) + 50;
+        const spawnY = pos.y || -enemyType.baseAttr.height;
+
+        // 从对象池获取敌人实例
+        const enemy = this.objectPool.getObject(enemyTypeId, {
+            id: `manual_${enemyTypeId}_${now}`,
+            typeId: enemyTypeId,
+            name: enemyType.name,
+            maxHealth: enemyType.baseAttr.maxHealth,
+            width: enemyType.baseAttr.width,
+            height: enemyType.baseAttr.height,
+            x: spawnX,
+            y: spawnY,
+            moveSpeed: enemyType.baseAttr.moveSpeed,
+            moveDir: enemyType.baseAttr.moveDir,
+            attackRange: enemyType.baseAttr.attackRange,
+            attackInterval: enemyType.baseAttr.attackInterval,
+            bulletSpeed: enemyType.baseAttr.bulletSpeed,
+            bulletDamage: enemyType.baseAttr.bulletDamage,
+            image: this.gameMain.getLoadedResource('images', enemyType.visual.imageKey),
+            color: enemyType.visual.color,
+            deathEffectDuration: enemyType.visual.deathEffectDuration,
+            moveRange: { minX: 50, maxX: canvasWidth - 50 }
+        });
+
+        if (enemy) {
+            this.enemyState.activeEnemies.push(enemy);
+            console.log(`[EnemyManager] 手动生成敌人：${enemyTypeId}（ID：${enemy.id}）`);
+        }
+    }
+
+    /**
+     * 对外接口：获取当前敌人状态（供UI显示波次、敌人数量）
+     * @returns {Object} 敌人状态（波次、活跃数量、下一波时间）
+     */
+    getEnemyState() {
+        const now = Date.now();
+        const { currentWave, activeEnemies, enemyBullets, nextWaveTime } = this.enemyState;
+        const maxEnemyThisWave = this.enemyConfig.spawn.enemyPerWave + Math.floor(currentWave * 0.5);
+        
+        return {
+            currentWave,
+            activeEnemyCount: activeEnemies.length,
+            maxActiveEnemyCount: this.enemyConfig.spawn.maxActiveEnemies,
+            enemyBulletCount: enemyBullets.length,
+            spawnedThisWave: this.enemyState.spawnedThisWave,
+            maxThisWave: maxEnemyThisWave,
+            nextWaveIn: Math.max(0, Math.floor((nextWaveTime - now) / 1000))
+        };
+    }
+
+    /**
+     * 对外接口：暂停/恢复敌人生成（如剧情场景）
+     * @param {boolean} isPause - 是否暂停（true=暂停，false=恢复）
+     */
+    pauseEnemySpawn(isPause) {
+        if (isPause) {
+            this.enemyState.pauseSpawnTime = Date.now(); // 记录暂停时间
+        } else if (this.enemyState.pauseSpawnTime) {
+            // 恢复时补偿暂停时长
+            const pauseDuration = Date.now() - this.enemyState.pauseSpawnTime;
+            this.enemyState.nextSpawnTime += pauseDuration;
+            this.enemyState.nextWaveTime += pauseDuration;
+            delete this.enemyState.pauseSpawnTime;
+        }
+    }
+}
+
+// 导出敌人管理系统类（兼容Node.js和浏览器环境）
+try {
+    module.exports = EnemyManager;
+} catch (e) {
+    // 浏览器环境挂载到window，供游戏主模块调用
+    window.EnemyManager = EnemyManager;
+    // 预注册默认敌人配置（无全局配置时使用）
+    if (!window.EnemyConfig) {
+        window.EnemyConfig = {
+            spawn: {
+                initialSpawnDelay: 3000,
+                baseSpawnInterval: 2000,
+                spawnIntervalReduce: 50,
+                minSpawnInterval: 500,
+                maxActiveEnemies: 15,
+                waveInterval: 15000,
+                enemyPerWave: 8
+            },
+            enemyTypes: [
+                { id: 'enemySmall', name: '小型战机', baseAttr: { health: 50, width: 40, height: 35, moveSpeed: 2.5, moveDir: 'down', attackRange: 300, attackInterval: 3000, bulletSpeed: 4, bulletDamage: 1 }, visual: { color: 'rgba(230, 126, 34, 0.9)', deathEffectDuration: 800 }, reward: { type: 'score', value: 100 } },
+                { id: 'enemyMedium', name: '中型战机', baseAttr: { health: 150, width: 55, height: 50, moveSpeed: 1.8, moveDir: 'down', attackRange: 350, attackInterval: 4500, bulletSpeed: 3.5, bulletDamage: 2 }, visual: { color: 'rgba(231, 76, 60, 0.9)', deathEffectDuration: 1000 }, reward: { type: 'score', value: 300 } },
+                { id: 'enemyFast', name: '快速突袭机', baseAttr: { health: 30, width: 35, height: 30, moveSpeed: 4, moveDir: 'downLeft', attackRange: 250, attackInterval: 2000, bulletSpeed: 5, bulletDamage: 1 }, visual: { color: 'rgba(52, 152, 219, 0.9)', deathEffectDuration: 600 }, reward: { type: 'score', value: 200 } }
+            ]
+        };
+    }
+}
