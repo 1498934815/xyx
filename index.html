@@ -9,6 +9,8 @@
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
+        
+        <!-- 游戏信息显示 -->
         <div id="gameInfo">
             <div class="stat-container">
                 <span class="stat-label">分数:</span>
@@ -28,17 +30,21 @@
             </div>
         </div>
         
+        <!-- BOSS相关UI -->
         <div id="bossTimer">BOSS倒计时: <span id="bossTime">90</span>秒</div>
         <div id="bossHealthBar">
             <div id="bossHealthFill"></div>
         </div>
         <div id="bossName"></div>
         <div id="bossWarning">BOSS来袭!</div>
-        <div id="levelUp" class="level-up">等级提升!</div>
-        <div id="lifeRegenTimer">生命恢复: <span id="regenTime">60</span>秒</div>
-        <div id="attackSpeedInfo">攻击速度: <span id="fireRate">200</span>ms</div>
-        <div id="multiBulletIndicator" class="multi-bullet-indicator">弹道数量: <span id="bulletLines">1</span></div>
         
+        <!-- 状态信息显示 -->
+        <div id="levelUp" class="level-up">等级提升!</div>
+        <div id="multiBulletIndicator" class="status-indicator">弹道数量: <span id="bulletLines">1</span></div>
+        <div id="attackSpeedInfo" class="status-indicator">攻击速度: <span id="fireRate">200</span>ms</div>
+        <div id="lifeRegenTimer" class="status-indicator">生命恢复: <span id="regenTime">60</span>秒</div>
+        
+        <!-- 控制区域 -->
         <div id="controls">
             <div id="joystickArea">
                 <div id="joystickBase"></div>
@@ -50,6 +56,7 @@
             </div>
         </div>
         
+        <!-- 技能栏 -->
         <div id="skillBar" class="skill-bar">
             <div class="skill-button" id="skillShield" style="border-color: #3498db;">
                 <div>护盾防御</div>
@@ -63,13 +70,14 @@
             </div>
         </div>
         
+        <!-- 特效和通知 -->
         <div id="achievementNotification" class="achievement-notification">
             <div class="achievement-title">成就解锁!</div>
             <div class="achievement-desc" id="achievementDesc"></div>
         </div>
-        
         <div id="bossRedFlash" class="boss-red-flash"></div>
         
+        <!-- 开始界面 -->
         <div id="startScreen">
             <h1>太空射击游戏 - 终极优化版</h1>
             <div class="instructions">
@@ -99,6 +107,7 @@
             <button id="startButton">开始游戏</button>
         </div>
         
+        <!-- 游戏结束界面 -->
         <div id="gameOverScreen">
             <h1>游戏结束</h1>
             <p>你的最终得分: <span id="finalScore">0</span></p>
