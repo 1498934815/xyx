@@ -1,0 +1,579 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    overflow: hidden;
+    background-color: #000;
+    color: white;
+    font-family: 'Arial', sans-serif;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+#gameContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#gameCanvas {
+    display: block;
+    background-color: #000;
+    width: 100%;
+    height: 100%;
+}
+
+#gameInfo {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    font-size: 16px;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 215, 0, 0.6);
+    line-height: 1.4;
+}
+
+.stat-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #ffd700;
+    margin-right: 10px;
+}
+
+.stat-value {
+    color: #fff;
+    font-weight: bold;
+}
+
+#bossTimer {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 16px;
+    background: linear-gradient(135deg, #8b0000, #ff4500);
+    padding: 10px 15px;
+    border-radius: 12px;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+    border: 2px solid #ffd700;
+    font-weight: bold;
+}
+
+#bossHealthBar {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 24px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    display: none;
+    z-index: 10;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#bossHealthFill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(to right, #e74c3c, #f39c12);
+    transition: width 0.3s;
+    border-radius: 12px;
+}
+
+.low-health {
+    animation: pulseHealth 1s infinite;
+}
+
+@keyframes pulseHealth {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+#bossName {
+    position: absolute;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px;
+    color: #f1c40f;
+    text-shadow: 0 0 8px #000;
+    display: none;
+    z-index: 10;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+#bossWarning {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    color: #e74c3c;
+    text-shadow: 0 0 15px #000;
+    animation: pulse 1s infinite;
+    display: none;
+    z-index: 15;
+    font-weight: bold;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+}
+
+.level-up {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    color: #2ecc71;
+    text-shadow: 0 0 15px #000;
+    animation: levelUp 1.5s forwards;
+    display: none;
+    z-index: 15;
+    font-weight: bold;
+}
+
+@keyframes levelUp {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+#lifeRegenTimer {
+    position: absolute;
+    bottom: 220px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 20px;
+    border-radius: 20px;
+    z-index: 10;
+    display: none;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#attackSpeedInfo {
+    position: absolute;
+    bottom: 250px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 20px;
+    border-radius: 20px;
+    z-index: 10;
+    display: none;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.multi-bullet-indicator {
+    position: absolute;
+    bottom: 280px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 16px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 20px;
+    border-radius: 20px;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: none;
+}
+
+#controls {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 10;
+}
+
+#joystickArea {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    z-index: 11;
+}
+
+#joystickBase {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    top: 20px;
+    left: 20px;
+}
+
+#joystickHandle {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(52, 152, 219, 0.8);
+    top: 40px;
+    left: 40px;
+    transition: transform 0.05s;
+}
+
+#fireArea {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+#fireButton {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(231, 76, 60, 0.3), rgba(231, 76, 60, 0.5));
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 16px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+    transition: all 0.1s;
+}
+
+#fireButton:active {
+    background: radial-gradient(circle, rgba(231, 76, 60, 0.6), rgba(231, 76, 60, 0.8));
+    transform: scale(0.95);
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
+}
+
+.skill-bar {
+    position: absolute;
+    bottom: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 25px;
+    z-index: 12;
+}
+
+.skill-button {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 16px;
+    text-align: center;
+    padding: 5px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.2s;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+    z-index: 13;
+}
+
+.skill-button:active {
+    transform: scale(0.95);
+}
+
+.skill-cooldown {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+.skill-active-indicator {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #2ecc71;
+    font-weight: bold;
+    text-shadow: 0 0 3px #000;
+    display: none;
+}
+
+#startScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 20;
+    text-align: center;
+    padding: 20px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+button {
+    padding: 15px 30px;
+    font-size: 18px;
+    background: linear-gradient(to bottom, #4CAF50, #2E8B57);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-weight: bold;
+}
+
+button:hover {
+    background: linear-gradient(to bottom, #45a049, #2E7D32);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #3498db;
+    text-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
+    letter-spacing: 1px;
+}
+
+.instructions {
+    margin: 20px 0;
+    max-width: 90%;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.instruction-item {
+    margin: 12px 0;
+    color: #bdc3c7;
+    text-align: left;
+    padding-left: 10px;
+    position: relative;
+}
+
+.instruction-item:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #3498db;
+}
+
+.settings-option {
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-label {
+    margin-right: 10px;
+    font-size: 16px;
+    color: #bdc3c7;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #2c3e50;
+    transition: .4s;
+    border-radius: 30px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #3498db;
+}
+
+input:checked + .slider:before {
+    transform: translateX(30px);
+}
+
+#gameOverScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 20;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.achievement-notification {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #f1c40f;
+    border-radius: 10px;
+    padding: 15px;
+    z-index: 20;
+    display: none;
+    animation: fadeInOut 3s forwards;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; top: 15%; }
+    20% { opacity: 1; top: 20%; }
+    80% { opacity: 1; top: 20%; }
+    100% { opacity: 0; top: 25%; }
+}
+
+.achievement-title {
+    font-size: 18px;
+    color: #f1c40f;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.achievement-desc {
+    font-size: 14px;
+    color: #ecf0f1;
+}
+
+.boss-red-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(231, 76, 60, 0.3);
+    pointer-events: none;
+    animation: redFlash 0.3s forwards;
+    z-index: 5;
+    display: none;
+}
+
+@keyframes redFlash {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.damage-popup {
+    position: absolute;
+    color: #e74c3c;
+    font-weight: bold;
+    text-shadow: 0 0 3px #000;
+    animation: floatUp 1s forwards;
+    z-index: 10;
+    font-size: 18px;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-30px); opacity: 0; }
+}
+
+.explosion-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 100, 0, 0.8), transparent);
+    animation: expand 0.8s forwards;
+    z-index: 10;
+    pointer-events: none;
+}
+
+@keyframes expand {
+    0% { transform: scale(0.1); opacity: 1; }
+    100% { transform: scale(5); opacity: 0; }
+}
