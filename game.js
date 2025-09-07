@@ -24,8 +24,8 @@ const lifeRegenTimer = document.getElementById('lifeRegenTimer');
 const regenTimeElement = document.getElementById('regenTime');
 const attackSpeedInfo = document.getElementById('attackSpeedInfo');
 const fireRateElement = document.getElementById('fireRate');
-const multiBulletIndicator = document.getElementById('multiBulletIndicator');
-const bulletLinesElement = document.getElementById('bulletLines');
+const joystickModeToggle = document.getElementById('joystickModeToggle');
+const autoFireToggle = document.getElementById('autoFireToggle');
 const skillShield = document.getElementById('skillShield');
 const skillRapid = document.getElementById('skillRapid');
 const cooldownShield = document.getElementById('cooldownShield');
@@ -33,6 +33,10 @@ const cooldownRapid = document.getElementById('cooldownRapid');
 const achievementNotification = document.getElementById('achievementNotification');
 const achievementDesc = document.getElementById('achievementDesc');
 const bossRedFlash = document.getElementById('bossRedFlash');
+const multiBulletIndicator = document.getElementById('multiBulletIndicator');
+const bulletLinesElement = document.getElementById('bulletLines');
+const shieldActiveIndicator = document.getElementById('shieldActive');
+const rapidActiveIndicator = document.getElementById('rapidActive');
 
 // 设置画布大小
 function resizeCanvas() {
@@ -287,10 +291,10 @@ function initGame() {
     initStars();
     
     // 设置摇杆模式
-    joystick.followMode = !document.getElementById('joystickModeToggle').checked;
+    joystick.followMode = !joystickModeToggle.checked;
     
     // 设置自动射击
-    if (document.getElementById('autoFireToggle').checked) {
+    if (autoFireToggle.checked) {
         startFiring();
     }
     
@@ -444,7 +448,7 @@ function bossAttack() {
     
     // 计算子弹速度分量
     const speedX = Math.cos(angle) * boss.bulletSpeed;
-    const speedY = Math.sin(angle) * boss.bul极Speed;
+    const speedY = Math.sin(angle) * boss.bulletSpeed;
     
     // 从BOSS中心发射子弹
     bossBullets.push({
@@ -488,7 +492,7 @@ function fireBullet() {
     
     // 根据弹道数量发射子弹
     for (let i = 0; i < bulletLines; i++) {
-        // 计算子弹偏移
+        // 计算子弹偏移（奇数弹道时中间一发，偶数弹道时对称分布）
         let offsetX = 0;
         if (bulletLines > 1) {
             const spacing = 10;
@@ -524,8 +528,8 @@ function fireBullet() {
 function startFiring() {
     if (!isFiring) {
         isFiring = true;
-        fireBullet();
-        fireInterval = setInterval(fireBullet, fireRate);
+        fireBullet(); // 立即发射第一颗子弹
+        fireInterval = setInterval(fireBullet, fireRate); // 根据当前射速发射
     }
 }
 
@@ -549,7 +553,7 @@ function checkLevelUp() {
         
         nextLevelScore = Math.floor(nextLevelScore * multiplier);
         
-        // 提高攻击速度
+        // 提高攻击速度（每级减少20ms，最低100ms）
         fireRate = Math.max(100, fireRate - 20);
         fireRateElement.textContent = fireRate;
         
@@ -566,10 +570,10 @@ function checkLevelUp() {
             bulletUpMsg.style.left = '50%';
             bulletUpMsg.style.transform = 'translate(-50%, -50%)';
             bulletUpMsg.style.color = '#f1c40f';
-            bullet极Msg.style.fontSize = '24px';
+            bulletUpMsg.style.fontSize = '24px';
             bulletUpMsg.style.textShadow = '0 0 5px #000';
             bulletUpMsg.style.animation = 'fadeOut 2s forwards';
-            bulletUpMsg.style.z极 = '15';
+            bulletUpMsg.style.zIndex = '15';
             
             document.getElementById('gameContainer').appendChild(bulletUpMsg);
             
@@ -648,7 +652,7 @@ function gameLoop(timestamp) {
     updateParticles();
     drawParticles();
     
-    // 更新和绘制玩家
+    // 更新和绘制玩家（如果不在无敌状态或闪烁可见）
     if (!player.invincible || Math.floor(gameTime / 100) % 2 === 0) {
         updatePlayer();
         drawPlayer();
@@ -667,6 +671,12 @@ function gameLoop(timestamp) {
         drawBoss();
         updateBossBullets();
         drawBossBullets();
+        
+        // 更新BOSS僚机
+        if (boss.minions) {
+            updateMinions();
+            drawMinions();
+        }
     }
     
     // 检查碰撞
@@ -685,7 +695,7 @@ function gameLoop(timestamp) {
     gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-// 更新玩家位置
+// 更新玩家位置（基于轮盘输入）
 function updatePlayer() {
     if (joystick.isActive) {
         player.x += joystick.direction.x * player.speed;
@@ -705,7 +715,7 @@ function updatePlayer() {
 // 绘制玩家飞船
 function drawPlayer() {
     if (player.invincible && Math.floor(gameTime / 100) % 2 === 0) {
-        return;
+        return; // 无敌状态时闪烁
     }
     
     // 绘制护盾
@@ -738,7 +748,7 @@ function drawPlayer() {
         ctx.fillStyle = '#e74c3c';
         ctx.beginPath();
         ctx.moveTo(player.x + player.width / 2 - 8, player.y + player.height);
-        ctx.lineTo(player极 + player.width / 2 + 8, player.y + player.height);
+        ctx.lineTo(player.x + player.width / 2 + 8, player.y + player.height);
         ctx.lineTo(player.x + player.width / 2, player.y + player.height + flameLength);
         ctx.closePath();
         ctx.fill();
@@ -785,7 +795,7 @@ function drawBullets() {
     });
 }
 
-// 生成敌人
+// 生成敌人（根据等级调整属性）
 function spawnEnemy() {
     if (!gameRunning || bossActive) return;
     
@@ -833,7 +843,7 @@ function spawnEnemy() {
 
 // 更新敌人位置
 function updateEnemies() {
-    for (let i = enemies.length - 1; i >= 极; i--) {
+    for (let i = enemies.length - 1; i >= 0; i--) {
         enemies[i].y += enemies[i].speed;
         
         // 移除超出屏幕的敌人
@@ -906,6 +916,51 @@ function drawEnemies() {
     });
 }
 
+// 更新BOSS僚机
+function updateMinions() {
+    for (let i = boss.minions.length - 1; i >= 0; i--) {
+        const minion = boss.minions[i];
+        
+        // 僚机跟随BOSS移动
+        minion.x = boss.x + (i * 50) - 25;
+        minion.y = boss.y + boss.height;
+        
+        // 检查僚机是否被击中
+        for (let j = bullets.length - 1; j >= 0; j--) {
+            if (isColliding(bullets[j], minion)) {
+                minion.health--;
+                bullets.splice(j, 1);
+                
+                // 僚机被摧毁
+                if (minion.health <= 0) {
+                    boss.minions.splice(i, 1);
+                    createExplosion(minion.x + minion.width/2, minion.y + minion.height/2, 30, '#3498db');
+                    score += 50;
+                    updateUI();
+                }
+                break;
+            }
+        }
+    }
+}
+
+// 绘制BOSS僚机
+function drawMinions() {
+    boss.minions.forEach(minion => {
+        ctx.fillStyle = minion.color;
+        ctx.beginPath();
+        ctx.arc(minion.x + minion.width/2, minion.y + minion.height/2, minion.width/2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制僚机血条
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect(minion.x, minion.y - 10, minion.width, 4);
+        
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(minion.x, minion.y - 10, minion.width * (minion.health / 10), 4);
+    });
+}
+
 // 绘制BOSS
 function drawBoss() {
     if (!boss) return;
@@ -924,12 +979,48 @@ function drawBoss() {
     // 绘制BOSS炮口
     ctx.fillStyle = '#000';
     ctx.fillRect(boss.x + boss.width / 2 - 15, boss.y + boss.height / 2 - 5, 30, 10);
+    
+    // 绘制BOSS伤害数字
+    if (boss.damageTaken > 0) {
+        const damagePopup = document.createElement('div');
+        damagePopup.className = 'damage-popup';
+        damagePopup.textContent = `-${boss.damageTaken}`;
+        damagePopup.style.left = `${boss.x + boss.width/2}px`;
+        damagePopup.style.top = `${boss.y - 20}px`;
+        document.getElementById('gameContainer').appendChild(damagePopup);
+        
+        setTimeout(() => {
+            damagePopup.remove();
+        }, 1000);
+        
+        boss.damageTaken = 0;
+    }
 }
 
 // 更新BOSS子弹位置
 function updateBossBullets() {
     for (let i = bossBullets.length - 1; i >= 0; i--) {
         const bullet = bossBullets[i];
+        
+        // 冲击波特殊处理
+        if (bullet.shockwave) {
+            bullet.duration--;
+            if (bullet.duration <= 0) {
+                bossBullets.splice(i, 1);
+                
+                // 检查玩家是否在冲击波范围内
+                if (isColliding(player, bullet)) {
+                    lives--;
+                    updateUI();
+                    playerHitEffect = 10;
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+            continue;
+        }
         
         bullet.x += bullet.speedX;
         bullet.y += bullet.speedY;
@@ -945,6 +1036,13 @@ function updateBossBullets() {
 // 绘制BOSS子弹
 function drawBossBullets() {
     bossBullets.forEach(bullet => {
+        if (bullet.shockwave) {
+            // 绘制冲击波警告
+            ctx.fillStyle = bullet.color;
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            return;
+        }
+        
         // 脉冲子弹特效
         if (bullet.pulse) {
             const pulseSize = 5 + Math.sin(Date.now() / 100) * 3;
@@ -1024,7 +1122,7 @@ function checkCollisions() {
                 damagePopup.className = 'damage-popup';
                 damagePopup.textContent = '-1';
                 damagePopup.style.left = `${enemies[j].x + enemies[j].width/2}px`;
-                damagePopup.style.top = `${enemies[j].y - 10极px`;
+                damagePopup.style.top = `${enemies[j].y - 10}px`;
                 document.getElementById('gameContainer').appendChild(damagePopup);
                 
                 setTimeout(() => {
@@ -1038,7 +1136,7 @@ function checkCollisions() {
                     
                     // 创建爆炸效果
                     createExplosion(
-                        enemies[j].极 + enemies[j].width/2, 
+                        enemies[j].x + enemies[j].width/2, 
                         enemies[j].y + enemies[j].height/2, 
                         enemies[j].width, 
                         enemies[j].color
@@ -1097,7 +1195,7 @@ function checkCollisions() {
             bullets.splice(i, 1);
             
             // 检查BOSS是否被击败
-            if (boss.currentHealth <= 极) {
+            if (boss.currentHealth <= 0) {
                 // 增加分数
                 score += boss.score;
                 
@@ -1170,7 +1268,7 @@ function checkCollisions() {
                     skills.shield.active = false;
                     skills.shield.cooldown = skills.shield.maxCooldown;
                     player.shield = false;
-                    document.getElementById('shieldActive').style.display = 'none';
+                    shieldActiveIndicator.style.display = 'none';
                     
                     // 护盾破碎特效
                     createExplosion(
@@ -1233,7 +1331,7 @@ function checkCollisions() {
                         speedX: (Math.random() - 0.5) * 5,
                         speedY: (Math.random() - 0.5) * 5,
                         color: '#3498db',
-                        life极 20
+                        life: 20
                     });
                 }
                 
@@ -1241,12 +1339,12 @@ function checkCollisions() {
                     skills.shield.active = false;
                     skills.shield.cooldown = skills.shield.maxCooldown;
                     player.shield = false;
-                    document.getElementById('shieldActive').style.display = 'none';
+                    shieldActiveIndicator.style.display = 'none';
                     
                     // 护盾破碎特效
                     createExplosion(
                         player.x + player.width/2,
-                        player.y + player极height/2,
+                        player.y + player.height/2,
                         50,
                         '#3498db'
                     );
@@ -1299,13 +1397,13 @@ function updateSkills() {
     // 护盾技能
     if (skills.shield.active) {
         skills.shield.duration--;
-        document.getElementById('shieldActive').style.display = 'block';
+        shieldActiveIndicator.style.display = 'block';
         
         if (skills.shield.duration <= 0 || skills.shield.hits >= 3) {
             skills.shield.active = false;
             skills.shield.cooldown = skills.shield.maxCooldown;
             player.shield = false;
-            document.getElementById('shieldActive').style.display = 'none';
+            shieldActiveIndicator.style.display = 'none';
         }
     } else if (skills.shield.cooldown > 0) {
         skills.shield.cooldown--;
@@ -1318,14 +1416,14 @@ function updateSkills() {
     // 射速爆发技能
     if (skills.rapid.active) {
         skills.rapid.duration--;
-        document.getElementById('rapidActive').style.display = 'block';
+        rapidActiveIndicator.style.display = 'block';
         
         if (skills.rapid.duration <= 0) {
             skills.rapid.active = false;
             skills.rapid.cooldown = skills.rapid.maxCooldown;
             fireRate = skills.rapid.originalFireRate;
             fireRateElement.textContent = fireRate;
-            document.getElementById('rapidActive').style.display = 'none';
+            rapidActiveIndicator.style.display = 'none';
             
             // 更新射击间隔
             if (isFiring) {
@@ -1335,7 +1433,7 @@ function updateSkills() {
         }
     } else if (skills.rapid.cooldown > 0) {
         skills.rapid.cooldown--;
-        cooldownRapid.textContent = Math.ceil(s极ills.rapid.cooldown / 60);
+        cooldownRapid.textContent = Math.ceil(skills.rapid.cooldown / 60);
         cooldownRapid.style.display = 'flex';
     } else {
         cooldownRapid.style.display = 'none';
@@ -1400,7 +1498,7 @@ function gameOver() {
         player.x + player.width/2,
         player.y + player.height/2,
         80,
-        '#e74c极c'
+        '#e74c3c'
     );
     
     // 震动反馈（移动端）
@@ -1409,181 +1507,78 @@ function gameOver() {
     }
 }
 
-// 轮盘控制事件
-function setupJoystick() {
+// 初始化触摸事件处理
+function initTouchEvents() {
     const joystickArea = document.getElementById('joystickArea');
-    const baseRect = joystickBase.getBoundingClientRect();
+    const skillBar = document.getElementById('skillBar');
     
-    joystick.baseX = baseRect.left + baseRect.width / 2;
-    joystick.baseY = baseRect.top + baseRect.height / 2;
-    
-    // 触摸事件
-    joystickArea.addEventListener('touchstart', handleTouchStart);
-    joystickArea.addEventListener('touchmove', handleTouchMove);
-    joystickArea.addEventListener('touchend', handleTouchEnd);
-    
-    // 鼠标事件
-    joystickArea.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-}
-
-function handleTouchStart(e) {
-    e.preventDefault();
-    joystick.isActive = true;
-    
-    // 跟随模式：摇杆中心跟随触摸位置
-    if (joystick.followMode) {
+    // 触摸开始
+    document.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
-        const rect = joystickArea.getBoundingClientRect();
-        joystick.baseX = touch.clientX;
-        joystick.baseY = touch.clientY;
+        const joystickRect = joystickArea.getBoundingClientRect();
+        const skillBarRect = skillBar.getBoundingClientRect();
         
-        // 限制在摇杆区域内
-        joystick.baseX = Math.max(rect.left + 40, Math.min(rect.right - 40, joystick.baseX));
-        joystick.baseY = Math.max(rect.top + 40, Math.min(rect.bottom - 40, joystick.baseY));
+        // 判断触摸区域
+        if (touch.clientY < skillBarRect.top - 40) {
+            // 摇杆区域
+            if (touch.clientX < joystickRect.right + 100 && 
+                touch.clientY < joystickRect.bottom + 100) {
+                joystick.isActive = true;
+                updateJoystickPosition(touch.clientX, touch.clientY);
+            }
+        } else {
+            // 技能区域 - 直接处理技能点击
+            handleSkillTouch(touch);
+        }
+    }, { passive: false });
+    
+    // 触摸移动
+    document.addEventListener('touchmove', (e) => {
+        if (!joystick.isActive) return;
         
-        joystickBase.style.left = `${joystick.baseX - rect.left - 40}px`;
-        joystickBase.style.top = `${joystick.baseY - rect.top - 40}px`;
-    }
-    
-    updateJoystickPosition(e.touches[0].clientX, e.t极ches[0].clientY);
-}
-
-function handleTouchMove(e) {
-    e.preventDefault();
-    if (joystick.isActive) {
-        updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
-    }
-}
-
-function handleTouchEnd() {
-    joystick.isActive = false;
-    resetJoystick();
-}
-
-function handleMouseDown(e) {
-    joystick.isActive = true;
-    updateJoystickPosition(e.clientX, e.clientY);
-}
-
-function handleMouseMove(e) {
-    if (joystick.isActive) {
-        updateJoystickPosition(e.client极, e.clientY);
-    }
-}
-
-function handleMouseUp() {
-    joystick.isActive = false;
-    resetJoystick();
-}
-
-function updateJoystickPosition(clientX, clientY) {
-    const dx = clientX - joystick.baseX;
-    const dy = clientY - joystick.baseY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // 死区范围检查
-    if (distance < joystick.deadZone) {
-        joystickHandle.style.transform = 'translate(0px, 0px)';
-        joystick.direction = { x: 0, y: 0 };
-        return;
-    }
-    
-    if (distance > joystick.maxRadius) {
-        const angle = Math.atan2(dy, dx);
-        const limitedX = Math.cos(angle) * joystick.maxRadius;
-        const limitedY = Math.sin(angle) * joystick.maxRadius;
+        const touch = e.touches[0];
+        const skillBarRect = skillBar.getBoundingClientRect();
         
-        joystickHandle.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
-        joystick.direction.x = limitedX / joystick.maxRadius;
-        joystick.direction.y = limitedY / joystick.maxRadius;
-    } else {
-        joystickHandle.style.transform = `translate($极x}px, ${dy}px)`;
-        joystick.direction.x = dx / joystick.maxRadius;
-        joystick.direction.y = dy / joystick.maxRadius;
-    }
-}
-
-// 射击按钮事件
-function setupFireButton() {
-    // 触摸事件
-    fireButton.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (!document.getElementById('autoFireToggle').checked) {
-            startFiring();
+        // 如果移动到技能区域，停止摇杆
+        if (touch.clientY > skillBarRect.top - 30) {
+            joystick.isActive = false;
+            resetJoystick();
+            return;
         }
-    });
+        
+        updateJoystickPosition(touch.clientX, touch.clientY);
+    }, { passive: false });
     
-    fireButton.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        if (!document.getElementById('autoFireToggle').checked) {
-            stopFiring();
-        }
-    });
-    
-    fireButton.addEventListener('touchcancel', (e极) => {
-        e.preventDefault();
-        if (!document.getElementById('autoFireToggle').checked) {
-            stopFiring();
-        }
-    });
-    
-    // 鼠标事件
-    fireButton.addEventListener('mousedown', () => {
-        if (!document.getElementById('autoFireToggle').checked) {
-            startFiring();
-        }
-    });
-    
-    fireButton.addEventListener('mouseup', () => {
-        if (!document.getElementById('autoFireToggle').checked) {
-            stopFiring();
-        }
-    });
-    
-    fireButton.addEventListener('mouseleave', () => {
-        if (!document.getElementById('autoFireToggle').checked) {
-            stopFiring();
-        }
+    // 触摸结束
+    document.addEventListener('touchend', () => {
+        joystick.isActive = false;
+        resetJoystick();
     });
 }
 
-// 技能按钮事件
-function setupSkillButtons() {
-    // 护盾技能 - 持续时间延长至20秒
-    skillShield.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+// 处理技能区域的触摸
+function handleSkillTouch(touch) {
+    const shieldRect = skillShield.getBoundingClientRect();
+    const rapidRect = skillRapid.getBoundingClientRect();
+    
+    // 检查是否点击护盾技能
+    if (touch.clientX >= shieldRect.left && touch.clientX <= shieldRect.right &&
+        touch.clientY >= shieldRect.top && touch.clientY <= shieldRect.bottom) {
         if (!skills.shield.active && skills.shield.cooldown <= 0) {
             activateShield();
         }
-    });
+    }
     
-    skillShield.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        if (!skills.shield.active && skills.shield.cooldown <= 0) {
-            activateShield();
-        }
-    });
-    
-    // 射速爆发技能 - 持续时间延长至12秒
-    skillRapid.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    // 检查是否点击射速爆发技能
+    if (touch.clientX >= rapidRect.left && touch.clientX <= rapidRect.right &&
+        touch.clientY >= rapidRect.top && touch.clientY <= rapidRect.bottom) {
         if (!skills.rapid.active && skills.rapid.cooldown <= 0) {
             activateRapidFire();
         }
-    });
-    
-    skillRapid.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        if (!skills.rapid.active && skills.rapid.cooldown <= 极) {
-            activateRapidFire();
-        }
-    });
+    }
 }
 
+// 激活护盾技能
 function activateShield() {
     skills.shield.active = true;
     skills.shield.duration = 200; // 20秒持续时间
@@ -1594,7 +1589,7 @@ function activateShield() {
     for (let i = 0; i < 30; i++) {
         particles.push({
             x: player.x + player.width/2,
-            y极 player.y + player.height/2,
+            y: player.y + player.height/2,
             size: Math.random() * 3 + 2,
             speedX: (Math.random() - 0.5) * 4,
             speedY: (Math.random() - 0.5) * 4,
@@ -1604,6 +1599,7 @@ function activateShield() {
     }
 }
 
+// 激活射速爆发技能
 function activateRapidFire() {
     skills.rapid.active = true;
     skills.rapid.duration = 120; // 12秒持续时间
@@ -1633,9 +1629,52 @@ function activateRapidFire() {
 
 // 初始化事件监听
 function initEventListeners() {
-    setupJoystick();
-    setupFireButton();
-    setupSkillButtons();
+    initTouchEvents();
+    
+    // 鼠标事件（用于测试）
+    const joystickArea = document.getElementById('joystickArea');
+    joystickArea.addEventListener('mousedown', (e) => {
+        joystick.isActive = true;
+        updateJoystickPosition(e.clientX, e.clientY);
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (joystick.isActive) {
+            updateJoystickPosition(e.clientX, e.clientY);
+        }
+    });
+    
+    document.addEventListener('mouseup', () => {
+        joystick.isActive = false;
+        resetJoystick();
+    });
+    
+    // 射击按钮
+    fireButton.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (!autoFireToggle.checked) {
+            startFiring();
+        }
+    });
+    
+    fireButton.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (!autoFireToggle.checked) {
+            stopFiring();
+        }
+    });
+    
+    fireButton.addEventListener('mousedown', () => {
+        if (!autoFireToggle.checked) {
+            startFiring();
+        }
+    });
+    
+    fireButton.addEventListener('mouseup', () => {
+        if (!autoFireToggle.checked) {
+            stopFiring();
+        }
+    });
     
     // 开始游戏按钮
     startButton.addEventListener('click', initGame);
@@ -1651,15 +1690,15 @@ function initEventListeners() {
     });
     
     // 摇杆模式切换
-    document.getElementById('joystickModeToggle').addEventListener('change', () => {
-        joystick.followMode = !document.getElementById('joystickModeToggle').checked;
+    joystickModeToggle.addEventListener('change', () => {
+        joystick.followMode = !joystickModeToggle.checked;
     });
     
     // 自动射击切换
-    document.getElementById('autoFireToggle').addEventListener('change', () => {
-        if (!document.getElementById('autoFireToggle').checked && isFiring) {
+    autoFireToggle.addEventListener('change', () => {
+        if (!autoFireToggle.checked && isFiring) {
             stopFiring();
-        } else if (document.getElementById('autoFireToggle').checked && gameRunning) {
+        } else if (autoFireToggle.checked && gameRunning) {
             startFiring();
         }
     });
