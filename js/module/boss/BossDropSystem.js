@@ -367,4 +367,180 @@ class BossDropSystem {
      * @param {number} deltaTime - 时间差（秒）
      */
     update(deltaTime) {
-       
+               const playerState = this.gameState.getFullState().player;
+        // 过滤活跃掉落物：保留未拾取/未过期的，回收已处理的
+        this.dropState.activeDrops = this.dropState.activeDrops.filter(dropObj => {
+            // 1. 检测拾取/过期（已处理则回收，不保留）
+            if (this._checkPickUp(dropObj, playerState)) {
+                this.objectPool.recycleObject('dropItem', dropObj);
+                return false;
+            }
+
+            // 2. 更新掉落物位置（未被吸引时，应用下落加速度）
+            if (Math.abs(dropObj.speedX) <= 1) { // 仅非吸引状态下应用加速度
+                dropObj.speedY += dropObj.acceleration;
+            }
+            dropObj.x += dropObj.speedX;
+            dropObj.y += dropObj.speedY;
+
+            // 3. 边界检测：超出画布范围则回收（不保留）
+            const canvasWidth = this.gameLoop.canvas.width / window.GameGlobalConfig.canvas.pixelRatio;
+            const canvasHeight = this.gameLoop.canvas.height / window.GameGlobalConfig.canvas.pixelRatio;
+            if (dropObj.x < -dropObj.size || dropObj.x > canvasWidth + dropObj.size || 
+                dropObj.y > canvasHeight + dropObj.size) {
+                this.objectPool.recycleObject('dropItem', dropObj);
+                return false;
+            }
+
+            // 4. 保留活跃掉落物
+            return true;
+        });
+    }
+
+    /**
+     * 主循环渲染：绘制所有活跃掉落物（支持图标/圆形降级渲染）
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     * @param {number} deltaTime - 时间差（秒）
+     */
+    render(ctx, deltaTime) {
+        this.dropState.activeDrops.forEach(dropObj => {
+            // 调用掉落物自身的render方法（优先渲染图标，无图标则渲染圆形）
+            if (typeof dropObj.render === 'function') {
+                dropObj.render(ctx);
+            } else {
+                // 降级渲染：默认圆形+边框
+                ctx.save();
+                ctx.fillStyle = dropObj.color || 'rgba(255, 215, 0, 1)';
+                ctx.beginPath();
+                ctx.arc(dropObj.x, dropObj.y, dropObj.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 可选：绘制掉落物拾取范围提示（调试模式下）
+            if (window.GameGlobalConfig?.debug?.enableDebugMode) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(dropObj.x, dropObj.y, this.dropConfig.pickUp.triggerRange, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        });
+    }
+
+    /**
+     * 对外接口：手动触发BOSS掉落（如测试或剧情场景）
+     * @param {Array<string>} [forceTypes] - 强制掉落的类型（如['life', 'skillShard']，跳过概率判定）
+     */
+    triggerForceDrop(forceTypes = []) {
+        if (!forceTypes.length) {
+            this._generateDrops(); // 无强制类型时，按默认规则生成
+            return;
+        }
+
+        const bossCenterX = this.boss.x + this.boss.width / 2;
+        const bossCenterY = this.boss.y + this.boss.height / 2;
+        const now = Date.now();
+
+        // 强制生成指定类型的掉落物（跳过概率判定）
+        forceTypes.forEach(typeKey => {
+            const dropType = this.dropConfig.dropTypes.find(type => type.key === typeKey);
+            if (!dropType) return;
+
+            for (let i = 0; i < dropType.count; i++) {
+                const offsetX = Math.random() * (this.dropConfig.dropRange.maxX - this.dropConfig.dropRange.minX) + this.dropConfig.dropRange.minX;
+                const offsetY = Math.random() * (this.dropConfig.dropRange.maxY - this.dropConfig.dropRange.minY) + this.dropConfig.dropRange.minY;
+
+                const dropObj = this._getDropFromPool({
+                    typeKey: dropType.key,
+                    x: bossCenterX + offsetX,
+                    y: bossCenterY + offsetY,
+                    size: dropType.size,
+                    color: dropType.color,
+                    icon: this.dropConfig.dropIcons[dropType.iconKey],
+                    expireTime: now + this.dropConfig.pickUp.expireTime,
+                    props: { ...dropType }
+                });
+
+                if (dropObj) {
+                    dropObj.speedY = dropType.speed;
+                    dropObj.speedX = (Math.random() - 0.5) * 2;
+                    dropObj.acceleration = dropType.acceleration;
+                    this.dropState.activeDrops.push(dropObj);
+                }
+            }
+        });
+
+        this.eventBus.emit(window.GameEvents.BOSS_SKILL, {
+            bossId: this.boss.id,
+            action: 'forceDrop',
+            dropCount: this.dropState.activeDrops.length
+        });
+    }
+
+    /**
+     * 对外接口：获取当前技能碎片收集状态（供UI显示）
+     * @returns {Object} 碎片状态（key=技能名，value=当前碎片数）
+     */
+    getSkillShardState() {
+        return { ...this.dropState.skillShardStorage };
+    }
+
+    /**
+     * 对外接口：获取当前活跃掉落物数量（供调试或UI显示）
+     * @returns {number} 活跃掉落物数量
+     */
+    getActiveDropCount() {
+        return this.dropState.activeDrops.length;
+    }
+}
+
+// 导出BOSS掉落系统类（兼容Node.js和浏览器环境）
+try {
+    module.exports = BossDropSystem;
+} catch (e) {
+    // 浏览器环境挂载到window，供BOSS实例调用
+    window.BossDropSystem = BossDropSystem;
+    // 预注册掉落物对象池类型（在ObjectPool未预注册时补充）
+    if (window.ObjectPool && !window.ObjectPool.poolMap.has('dropItem')) {
+        window.ObjectPool.registerType(
+            'dropItem',
+            () => ({
+                typeKey: '',
+                x: 0,
+                y: 0,
+                size: 15,
+                color: 'rgba(255, 215, 0, 1)',
+                icon: null,
+                expireTime: 0,
+                props: {},
+                speedX: 0,
+                speedY: 0,
+                acceleration: 0,
+                reset: function (newData) { Object.assign(this, newData); },
+                render: function (ctx) {
+                    ctx.save();
+                    if (this.icon) {
+                        ctx.drawImage(this.icon, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                    } else {
+                        ctx.fillStyle = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+            }),
+            { initialSize: 10, maxSize: 30 } // 掉落物池初始10个，最大30个
+        );
+    }
+}
+
