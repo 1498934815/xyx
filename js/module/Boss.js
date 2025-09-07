@@ -31,9 +31,9 @@ class BossManager {
         if (this.attackTimer) clearInterval(this.attackTimer);
         if (this.spawnTimer) clearTimeout(this.spawnTimer);
         // 隐藏BOSS UI
-        uiManager.setVisible('bossHealthBar', false);
-        uiManager.setVisible('bossName', false);
-        uiManager.setVisible('bossWarning', false);
+        Utils.setVisible('bossHealthBar', false);
+        Utils.setVisible('bossName', false);
+        Utils.setVisible('bossWarning', false);
         // 开始BOSS生成倒计时
         this.startSpawnCountdown();
     }
@@ -461,8 +461,8 @@ class BossManager {
         // 5. 停止BOSS攻击
         clearInterval(this.attackTimer);
         // 6. 隐藏BOSS UI
-        uiManager.setVisible('bossHealthBar', false);
-        uiManager.setVisible('bossName', false);
+        Utils.setVisible('bossHealthBar', false);
+        Utils.setVisible('bossName', false);
         // 7. 重置BOSS状态
         this.boss = null;
         GameState.bossActive = false;
