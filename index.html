@@ -3,32 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能五子棋</title>
+    <title>智能五子棋 - AI行为分析</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
-        <h1>五子棋 <span id="game-mode">人机对战</span></h1>
-        
-        <div class="control-panel">
-            <select id="difficulty">
-                <option value="3">初级</option>
-                <option value="5" selected>中级</option>
-                <option value="7">高级</option>
-            </select>
-            <button id="restart">重新开始</button>
-            <button id="undo">悔棋</button>
-            <button id="mode-toggle">切换模式</button>
+    <div class="header">智能五子棋 - AI行为分析</div>
+    
+    <div class="main-container">
+        <div class="game-section">
+            <div class="game-title">五子棋 <span id="game-mode">人机对战</span></div>
+            
+            <div class="game-header">
+                <div class="difficulty-selector">
+                    <span>难度：</span>
+                    <select id="difficulty">
+                        <option value="2">初级</option>
+                        <option value="4" selected>中级</option>
+                        <option value="6">高级</option>
+                    </select>
+                </div>
+                <div class="game-controls">
+                    <button id="restart">重新开始</button>
+                    <button id="undo">悔棋</button>
+                    <button id="mode-toggle">切换模式</button>
+                </div>
+            </div>
+            
+            <div class="board-container">
+                <div id="board" class="board"></div>
+            </div>
+            
+            <div id="game-status" class="game-status">黑方回合</div>
+            <div id="move-history" class="game-status">步数: 0</div>
+            
+            <div id="ai-thinking" class="ai-thinking">电脑思考中...</div>
         </div>
         
-        <div id="board" class="board"></div>
-        
-        <div class="status">
-            <p id="game-status">黑方回合</p>
-            <p id="move-history"></p>
+        <div class="analysis-section">
+            <div class="analysis-title">AI行为分析</div>
+            
+            <div class="analysis-content">
+                <div class="analysis-item">
+                    <h3>当前局势分析</h3>
+                    <p id="situation-analysis">棋盘初始状态，暂无威胁</p>
+                </div>
+                
+                <div class="analysis-item">
+                    <h3>AI决策逻辑</h3>
+                    <p id="ai-decision">AI正在评估最佳落子位置...</p>
+                    <div class="threat-indicator">
+                        <span>威胁评估：</span>
+                        <div class="threat-bar">
+                            <div id="threat-level" class="threat-level" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analysis-item">
+                    <h3>为什么AI不阻挡活三？</h3>
+                    <p>在您的情况下，AI不阻挡活三可能有以下原因：</p>
+                    <ul>
+                        <li>AI优先考虑构建自己的进攻而不是单纯防守</li>
+                        <li>当前搜索深度限制了AI的长远规划能力</li>
+                        <li>评估函数可能没有正确加权活三的威胁程度</li>
+                        <li>AI可能认为有其他更紧急的局势需要处理</li>
+                    </ul>
+                </div>
+                
+                <div class="analysis-item">
+                    <h3>如何提高AI的防守能力</h3>
+                    <p>在这个游戏中，AI已经实现了以下改进：</p>
+                    <ul>
+                        <li>增强了对活三、冲四等威胁模式的识别</li>
+                        <li>优化了评估函数，更加重视防守</li>
+                        <li>增加了搜索深度，能够更好地预测未来几步</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <script src="game.js" type="module"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>
