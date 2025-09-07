@@ -2,123 +2,33 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>太空射击游戏 - 终极优化版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能五子棋</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+    <div class="game-container">
+        <h1>五子棋 <span id="game-mode">人机对战</span></h1>
         
-        <!-- 左上角信息框 -->
-        <div id="gameInfo">
-            <div class="info-row">
-                <span class="info-label">分数:</span>
-                <span class="info-value" id="score">0</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">生命:</span>
-                <span class="info-value" id="lives">3</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">等级:</span>
-                <span class="info-value" id="level">1</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">升级:</span>
-                <span class="info-value" id="nextLevel">100</span>
-            </div>
+        <div class="control-panel">
+            <select id="difficulty">
+                <option value="3">初级</option>
+                <option value="5" selected>中级</option>
+                <option value="7">高级</option>
+            </select>
+            <button id="restart">重新开始</button>
+            <button id="undo">悔棋</button>
+            <button id="mode-toggle">切换模式</button>
         </div>
         
-        <!-- 右上角BOSS倒计时 -->
-        <div id="bossTimer">
-            <span>BOSS倒计时:</span>
-            <span id="bossTime">84</span>
-            <span>秒</span>
-        </div>
+        <div id="board" class="board"></div>
         
-        <!-- 顶部状态信息 -->
-        <div class="status-bar" id="networkStatus">
-            <span>19:59</span>
-            <span>6.645G KB/s</span>
-            <span>5G</span>
-            <span>32%</span>
-        </div>
-        
-        <!-- BOSS血条 -->
-        <div id="bossHealthBar">
-            <div id="bossHealthFill"></div>
-            <span id="bossHealthText">100%</span>
-        </div>
-        
-        <!-- 弹道和速度信息 -->
-        <div class="game-stats">
-            <div class="stat-item">
-                <span>弹道数量:</span>
-                <span id="bulletLines">1</span>
-            </div>
-            <div class="stat-item">
-                <span>速度:</span>
-                <span id="fireRate">200</span>
-            </div>
-        </div>
-        
-        <!-- 控制区域 -->
-        <div id="controls">
-            <!-- 左侧摇杆区域 -->
-            <div id="joystickArea">
-                <div id="joystickBase"></div>
-                <div id="joystickHandle"></div>
-            </div>
-            
-            <!-- 右侧按钮区域 -->
-            <div id="buttonsArea">
-                <div class="skill-button" id="skillShield">
-                    <span>护盾防御</span>
-                    <div class="cooldown-overlay" id="cooldownShield"></div>
-                </div>
-                
-                <div class="skill-button" id="skillRapid">
-                    <span>射速爆发</span>
-                    <div class="cooldown-overlay" id="cooldownRapid"></div>
-                </div>
-                
-                <div id="fireButton">
-                    <span>射击</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 游戏标题 -->
-        <div id="gameTitle">
-            <h1>太空射击游戏-终极</h1>
-        </div>
-        
-        <!-- 开始界面 -->
-        <div id="startScreen">
-            <div class="start-content">
-                <h2>准备开始</h2>
-                <button id="startButton">开始游戏</button>
-            </div>
-        </div>
-        
-        <!-- 游戏结束界面 -->
-        <div id="gameOverScreen">
-            <div class="game-over-content">
-                <h2>游戏结束</h2>
-                <p>最终得分: <span id="finalScore">0</span></p>
-                <button id="restartButton">重新开始</button>
-            </div>
-        </div>
-        
-        <!-- 特效层 -->
-        <div id="effectsLayer">
-            <div id="bossWarning"></div>
-            <div id="levelUpEffect"></div>
-            <div id="damageEffect"></div>
+        <div class="status">
+            <p id="game-status">黑方回合</p>
+            <p id="move-history"></p>
         </div>
     </div>
-
-    <script src="game.js"></script>
+    
+    <script src="game.js" type="module"></script>
 </body>
 </html>
