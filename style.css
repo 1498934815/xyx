@@ -1,534 +1,120 @@
-/* 全局样式重置 */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
+:root {
+    --cell-size: 40px;
+    --board-color: #DCB35C;
+    --line-color: #8D6E3B;
+    --black-piece: #333;
+    --white-piece: #FFF;
 }
 
 body {
-    overflow: hidden;
-    background-color: #000;
-    font-family: 'Arial', sans-serif;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    color: white;
+    font-family: 'Microsoft YaHei', sans-serif;
+    background: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
 }
 
-#gameContainer {
+.game-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.board {
+    display: inline-grid;
+    grid-template-columns: repeat(15, var(--cell-size));
+    grid-template-rows: repeat(15, var(--cell-size));
+    background-color: var(--board-color);
+    border: 3px solid var(--line-color);
+    margin: 20px 0;
     position: relative;
+}
+
+.cell {
     width: 100%;
     height: 100%;
+    border: 1px solid var(--line-color);
+    box-sizing: border-box;
+    position: relative;
+    cursor: pointer;
 }
 
-#gameCanvas {
-    display: block;
-    background-color: #000;
-    width: 100%;
-    height: 100%;
-}
-
-/* 顶部状态栏 - 根据截图精确还原 */
-#networkStatus {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 25px;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 15px;
-    font-size: 12px;
-    color: #fff;
-    z-index: 20;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-#networkStatus span {
-    font-weight: bold;
-}
-
-/* 左上角信息框 - 黄色方框 */
-#gameInfo {
-    position: absolute;
-    top: 30px;
-    left: 10px;
-    background: linear-gradient(135deg, #ffd700, #ffa500);
-    padding: 12px 15px;
-    border-radius: 12px;
-    z-index: 10;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-    border: 2px solid #ffd700;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    min-width: 120px;
-}
-
-.info-row:last-child {
-    margin-bottom: 0;
-}
-
-.info-label {
-    color: #8b4513;
-    font-weight: bold;
-    font-size: 14px;
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
-    margin-right: 8px;
-}
-
-.info-value {
-    color: #fff;
-    font-weight: bold;
-    font-size: 14px;
-    text-shadow: 0 0 3px #000;
-    min-width: 30px;
-    text-align: right;
-}
-
-/* 右上角BOSS倒计时 - 红色按钮 */
-#bossTimer {
-    position: absolute;
-    top: 30px;
-    right: 10px;
-    background: linear-gradient(135deg, #ff4500, #ff0000);
-    padding: 10px 15px;
-    border-radius: 20px;
-    z-index: 10;
-    border: 2px solid #ffd700;
-    font-weight: bold;
-    color: white;
-    text-shadow: 0 0 3px #000;
-    box-shadow: 0 0 10px rgba(255, 69, 0, 0.7);
-    font-size: 14px;
-}
-
-#bossTimer span {
-    margin: 0 2px;
-}
-
-/* BOSS血条 - 橙色六边形 */
-#bossHealthBar {
-    position: absolute;
-    top: 80px;
-    right: 20px;
-    width: 120px;
-    height: 24px;
-    background: rgba(255, 165, 0, 0.3);
-    border-radius: 12px;
-    overflow: hidden;
-    display: none;
-    z-index: 10;
-    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-#bossHealthFill {
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(to right, #ff8c00, #ffd700);
-    transition: width 0.3s;
-    border-radius: 12px;
-}
-
-#bossHealthText {
+.cell::after {
+    content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 12px;
-    font-weight: bold;
-    color: white;
-    text-shadow: 0 0 3px #000;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.3s;
 }
 
-/* 游戏状态信息 */
-.game-stats {
+.cell:hover::after {
+    opacity: 0.2;
+    background: currentColor;
+}
+
+.piece {
     position: absolute;
-    bottom: 180px;
+    width: 80%;
+    height: 80%;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 20px;
-    z-index: 10;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    z-index: 2;
+    animation: drop 0.3s ease-out;
 }
 
-.stat-item {
-    background: rgba(0, 0, 0, 0.7);
+@keyframes drop {
+    0% { transform: translate(-50%, -150%); opacity: 0; }
+    100% { transform: translate(-50%, -50%); opacity: 1; }
+}
+
+.black {
+    background: var(--black-piece);
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.white {
+    background: var(--white-piece);
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+.control-panel {
+    margin: 15px 0;
+}
+
+button, select {
     padding: 8px 15px;
-    border-radius: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: 14px;
-    color: white;
-    text-shadow: 0 0 3px #000;
-}
-
-.stat-item span:first-child {
-    color: #f1c40f;
-    margin-right: 5px;
-}
-
-/* 控制区域 */
-#controls {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    z-index: 10;
-}
-
-/* 左侧摇杆 */
-#joystickArea {
-    position: relative;
-    width: 120px;
-    height: 120px;
-}
-
-#joystickBase {
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    top: 20px;
-    left: 20px;
-}
-
-#joystickHandle {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: rgba(52, 152, 219, 0.8);
-    top: 40px;
-    left: 40px;
-    transition: transform 0.05s;
-}
-
-/* 右侧按钮区域 */
-#buttonsArea {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
-.skill-button {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.7);
-    border: 2px solid;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 12px;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-
-#skillShield {
-    border-color: #3498db;
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
-}
-
-#skillRapid {
-    border-color: #f1c40f;
-    box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
-}
-
-.skill-button span {
-    font-weight: bold;
-    text-shadow: 0 0 3px #000;
-}
-
-.cooldown-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 50%;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-}
-
-#fireButton {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(231, 76, 60, 0.3), rgba(231, 76, 60, 0.5));
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
-    text-shadow: 0 0 3px #000;
-}
-
-#fireButton:active {
-    background: radial-gradient(circle, rgba(231, 76, 60, 0.6), rgba(231, 76, 60, 0.8));
-    transform: scale(0.95);
-}
-
-/* 游戏标题 */
-#gameTitle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    z-index: 5;
-}
-
-#gameTitle h1 {
-    font-size: 24px;
-    color: #3498db;
-    text-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
-    letter-spacing: 1px;
-}
-
-/* 开始界面 */
-#startScreen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 30;
-}
-
-.start-content {
-    text-align: center;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 30px;
-    border-radius: 20px;
-    border: 2px solid #3498db;
-}
-
-.start-content h2 {
-    color: #3498db;
-    margin-bottom: 20px;
-    font-size: 24px;
-}
-
-#startButton {
-    padding: 15px 30px;
-    font-size: 18px;
-    background: linear-gradient(to bottom, #4CAF50, #2E8B57);
-    color: white;
+    margin: 0 5px;
     border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    font-weight: bold;
-    text-shadow: 0 0 3px #000;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-#startButton:active {
-    transform: scale(0.95);
-}
-
-/* 游戏结束界面 */
-#gameOverScreen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 30;
-}
-
-.game-over-content {
-    text-align: center;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 30px;
-    border-radius: 20px;
-    border: 2px solid #e74c3c;
-}
-
-.game-over-content h2 {
-    color: #e74c3c;
-    margin-bottom: 20px;
-    font-size: 24px;
-}
-
-.game-over-content p {
-    font-size: 18px;
-    margin-bottom: 20px;
+    border-radius: 4px;
+    background: #4a6fa5;
     color: white;
-}
-
-#restartButton {
-    padding: 15px 30px;
-    font-size: 18px;
-    background: linear-gradient(to bottom, #3498db, #2980b9);
-    color: white;
-    border: none;
-    border-radius: 25px;
     cursor: pointer;
-    font-weight: bold;
-    text-shadow: 0 0 3px #000;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s;
 }
 
-#restartButton:active {
-    transform: scale(0.95);
+button:hover {
+    background: #3a5a8c;
 }
 
-/* 特效层 */
-#effectsLayer {
+.status {
+    margin-top: 15px;
+    font-size: 1.1em;
+}
+
+.win-line {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 25;
-}
-
-#bossWarning {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 32px;
-    color: #e74c3c;
-    text-shadow: 0 0 15px #000;
-    animation: pulse 1s infinite;
-    display: none;
-    font-weight: bold;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-}
-
-#levelUpEffect {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 28px;
-    color: #2ecc71;
-    text-shadow: 0 0 15px #000;
-    animation: levelUp 1.5s forwards;
-    display: none;
-    font-weight: bold;
-}
-
-@keyframes levelUp {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
-}
-
-#damageEffect {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(231, 76, 60, 0.3);
-    pointer-events: none;
-    animation: redFlash 0.3s forwards;
-    display: none;
-}
-
-@keyframes redFlash {
-    0% { opacity: 0; }
-    50% { opacity: 1; }
-    100% { opacity: 0; }
-}
-
-/* 响应式设计 */
-@media (max-height: 700px) {
-    .game-stats {
-        bottom: 150px;
-    }
-    
-    .skill-button {
-        width: 60px;
-        height: 60px;
-        font-size: 11px;
-    }
-    
-    #fireButton {
-        width: 70px;
-        height: 70px;
-        font-size: 14px;
-    }
-    
-    #joystickArea {
-        width: 100px;
-        height: 100px;
-    }
-    
-    #joystickBase {
-        width: 70px;
-        height: 70px;
-        top: 15px;
-        left: 15px;
-    }
-    
-    #joystickHandle {
-        width: 35px;
-        height: 35px;
-        top: 32px;
-        left: 32px;
-    }
-}
-
-@media (orientation: landscape) {
-    #gameInfo {
-        top: 35px;
-        left: 10px;
-    }
-    
-    #bossTimer {
-        top: 35px;
-        right: 10px;
-    }
-    
-    .game-stats {
-        bottom: 160px;
-    }
+    background: red;
+    z-index: 1;
+    transform-origin: 0 0;
 }
