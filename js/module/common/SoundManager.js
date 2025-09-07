@@ -399,4 +399,164 @@ class SoundManager {
             soundAudio.loop = loop !== undefined ? loop : soundInfo.loop;
         } else {
             // 未预加载，直接创建新实例并加载
-            soundAudio = new Audio
+            soundAudio = new Audio(soundInfo.url);
+            soundAudio.volume = this._calcFinalVolume(soundId);
+            soundAudio.loop = loop !== undefined ? loop : soundInfo.loop;
+            // 加载后播放（避免未加载完成导致播放失败）
+            soundAudio.oncanplaythrough = () => {
+                soundAudio.play().catch(err => {
+                    console.error(`[SoundManager Error] 音效播放失败：${soundId}，${err.message}`);
+                });
+            };
+            return true;
+        }
+
+        // 播放已加载的音效（直接创建新实例避免打断）
+        soundAudio.play().then(() => {
+            console.log(`[SoundManager] 音效播放：${soundId}`);
+            // 非循环音效播放结束后释放资源（优化内存）
+            if (!soundAudio.loop) {
+                soundAudio.onended = () => {
+                    soundAudio = null;
+                };
+            }
+        }).catch(err => {
+            console.error(`[SoundManager Error] 音效播放失败：${soundId}，${err.message}`);
+        });
+
+        return true;
+    }
+
+    /**
+     * 暂停指定音频（支持BGM/音效，可选暂停所有同类型音频）
+     * @param {string} soundId - 音频ID（传null时暂停所有音频）
+     * @param {boolean} [pauseAllSameType=false] - 是否暂停所有同类型音频
+     */
+    pauseSound(soundId = null, pauseAllSameType = false) {
+        // 暂停所有音频（soundId为null时）
+        if (soundId === null) {
+            this.soundState.loadedSounds.forEach(audio => {
+                if (!audio.paused) audio.pause();
+            });
+            this.soundState.playingBGM = null; // 重置当前BGM标记
+            return;
+        }
+
+        const soundInfo = this.soundConfig.soundList[soundId];
+        if (!soundInfo) return;
+
+        // 暂停所有同类型音频（如pauseAllSameType=true时，暂停所有UI音效）
+        if (pauseAllSameType) {
+            this.soundState.loadedSounds.forEach((audio, id) => {
+                const idSoundInfo = this.soundConfig.soundList[id];
+                if (idSoundInfo?.type === soundInfo.type && !audio.paused) {
+                    audio.pause();
+                }
+            });
+            // 若为BGM类型，重置当前BGM标记
+            if (soundInfo.type === 'bgm') {
+                this.soundState.playingBGM = null;
+            }
+            return;
+        }
+
+        // 暂停指定音频（仅BGM，音效多实例无法精准暂停，建议通过loop=false自动结束）
+        if (soundInfo.type === 'bgm' && this.soundState.playingBGM === soundId) {
+            const audio = this.soundState.loadedSounds.get(soundId);
+            if (audio && !audio.paused) {
+                audio.pause();
+                this.soundState.playingBGM = null;
+            }
+        }
+    }
+
+    /**
+     * 设置全局静音状态（同步到游戏状态与音频音量）
+     * @param {boolean} isMuted - 是否静音（true=静音，false=取消静音）
+     */
+    setMuted(isMuted) {
+        this.soundState.muted = isMuted;
+        // 同步静音状态到游戏状态（持久化）
+        this.gameState.updateSettings('muted', isMuted);
+        // 更新所有音频音量（静音时音量为0，取消时恢复原音量）
+        this._updateAllVolumes();
+        console.log(`[SoundManager] 全局静音状态：${isMuted ? '已静音' : '未静音'}`);
+    }
+
+    /**
+     * 获取当前音频状态（供UI显示音量、静音状态）
+     * @returns {Object} 音频状态（主音量、BGM音量、音效音量、静音状态、当前BGM）
+     */
+    getSoundState() {
+        const { master, bgm, effect } = this.soundConfig.volumeConfig;
+        return {
+            masterVolume: master,
+            bgmVolume: bgm,
+            effectVolume: effect,
+            isMuted: this.soundState.muted,
+            currentBGM: this.soundState.playingBGM,
+            loadedCount: this.soundState.loadedSounds.size,
+            totalCount: Object.keys(this.soundConfig.soundList).length,
+            loadFailedCount: this.soundState.loadFailed.size
+        };
+    }
+
+    /**
+     * 预加载指定音频（补充预加载，如切换到新场景前加载场景专属音频）
+     * @param {string[]} soundIds - 需预加载的音频ID数组
+     */
+    preloadSpecificSounds(soundIds) {
+        if (!Array.isArray(soundIds) || soundIds.length === 0) return;
+
+        soundIds.forEach(soundId => {
+            // 已加载或加载失败的音频跳过
+            if (this.soundState.loadedSounds.has(soundId) || this.soundState.loadFailed.has(soundId)) {
+                return;
+            }
+
+            const soundInfo = this.soundConfig.soundList[soundId];
+            if (!soundInfo) return;
+
+            const audio = new Audio(soundInfo.url);
+            audio.volume = this._calcFinalVolume(soundId);
+            audio.loop = soundInfo.loop || false;
+
+            audio.oncanplaythrough = () => {
+                this.soundState.loadedSounds.set(soundId, audio);
+                console.log(`[SoundManager] 补充预加载成功：${soundId}`);
+            };
+
+            audio.onerror = () => {
+                this.soundState.loadFailed.add(soundId);
+                console.error(`[SoundManager Error] 补充预加载失败：${soundId}`);
+            };
+
+            audio.load();
+        });
+    }
+}
+
+// 导出音频管理系统类（兼容Node.js和浏览器环境）
+try {
+    module.exports = SoundManager;
+} catch (e) {
+    // 浏览器环境挂载到window，供游戏主模块调用
+    window.SoundManager = SoundManager;
+    // 预注册音频相关游戏事件（避免事件未定义）
+    if (!window.GameEvents) {
+        window.GameEvents = window.GameEvents || {};
+        // 补充音频相关事件（若全局未定义）
+        const audioEvents = [
+            'SCENE_CHANGE', 'UI_CLICK', 'UI_OPEN', 'UI_CLOSE',
+            'PLAYER_SHOOT', 'ENEMY_EXPLODE', 'BOSS_SKILL',
+            'ENEMY_DEATH', 'ENEMY_SPAWN', 'BOSS_SPAWN',
+            'PLAYER_HIT', 'ITEM_PICKUP', 'PLAYER_LEVELUP',
+            'MUTE_TOGGLE', 'VOLUME_CHANGE', 'GAME_OVER'
+        ];
+        audioEvents.forEach(event => {
+            if (!window.GameEvents[event]) {
+                window.GameEvents[event] = `GAME_EVENTS_${event}`;
+            }
+        });
+    }
+}
