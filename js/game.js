@@ -439,10 +439,10 @@ function spawnBoss() {
             ...bossType,
             x: canvas.width / 2 - bossType.width / 2,
             y: 50,
-            currentHealth = Math.floor(bossType.baseHealth * healthMultiplier),
-            health = Math.floor(bossType.baseHealth * healthMultiplier),
-            score = Math.floor(bossType.baseScore * scoreMultiplier),
-            minions = []
+            currentHealth: Math.floor(bossType.baseHealth * healthMultiplier),
+            health: Math.floor(bossType.baseHealth * healthMultiplier),
+            score: Math.floor(bossType.baseScore * scoreMultiplier),
+            minions: []
         };
         
         bossHealthBar.style.display = 'block';
