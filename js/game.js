@@ -432,7 +432,7 @@ function spawnBoss() {
         
         const bossType = bosses[Math.floor(Math.random() * bosses.length)];
         
-        const healthMultiplier = 1 + (level * 0.1);
+        const healthMultiplier = 1 + (level * 0.5);
         const scoreMultiplier = 1 + (level * 0.2);
         
         boss = {
@@ -773,7 +773,7 @@ function spawnEnemy() {
     let enemySize, enemySpeed, enemyHealth, enemyScore;
 
     const speedMultiplier = 1 + (level * 0.1);
-    const healthMultiplier = 1 + (level * 0.15);
+    const healthMultiplier = 1 + (level * 0.5);
     const scoreMultiplier = 1 + (level * 0.1);
 
     switch (enemyType) {
